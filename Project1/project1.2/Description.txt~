@@ -1,0 +1,20 @@
+Question 1. what you think is in the foreground, the middleground, and the background
+	The two images were taken at the same spot at different time of a day.
+	the foreground is the lamp and a tree on the left hand side.
+	The middleground is the building which is Golden Library.
+	the background are the sky and the cloud.
+
+Question 2. what objects are the focus of the scene
+	As the focal length of the phone is short, most of objects in the picture are not defocused or blurred.
+	However, the lamp and the tree are the focus of the scene.
+
+Question 3. what environmental properties are contained in the scene
+	In the scene, there are organic objects like tree and ivy. Artificial object are the building and lamp.
+	In terms of reflections, there are mirrors in front of the building which reflects the other building behind me. Glasses on the top of the building can reflect and refract light (very beautiful during the night).
+	In the background, the sky and the cloud are pretty far away and amost could be considered as environment map. However, the cloud would change at every frame which is more like a group of particles. 
+
+Question 4. what would be easy to model (not render) in the scene
+	The lamp and the building are easy to model. The lamp is just a cylinder, a cone and a sphere. The building is amost a box
+
+Question 5. what would be difficult to model (not render) in the scene
+	The tree and the ivy are hard to model as they have some kind randomness and complex geometries.
