@@ -20,7 +20,7 @@ Mesh.prototype.ComputeFaceNormal = function () {
 
 Mesh.prototype.ComputeVertexNormal = function () {
 	if (this.faceNormals.length == 0)
-		ComputeFaceNormal();
+		this.ComputeFaceNormal();
 	var normalCount = [];
 	this.normals = [];
 	for (var i = 0; i < this.vertices.length; i++) {
@@ -47,7 +47,7 @@ Mesh.prototype.DumpToVertextArray = function (vertexBuffer, normalBuffer, colorB
 	this.vertexNum = this.indices.length;
 	if (shareVertex == 0) {	// not sharing
 		if (this.faceNormals.length == 0)
-			ComputeFaceNormal();
+			this.ComputeFaceNormal();
 		for (var i = 0; i < this.faceNormals.length; i++) {
 			for (var j = 0; j < 3; j++) {
 				var id = this.indices[i * 3 + j];
@@ -58,11 +58,9 @@ Mesh.prototype.DumpToVertextArray = function (vertexBuffer, normalBuffer, colorB
 		}
 	}
 	else {
-		if (this.faceNormals.length == 0)
-			ComputeFaceNormal();
 		if (this.normals.length == 0)
-			ComputeVertexNormal();
-		for (var i = 0; i < this.faceNormals.length; i++) {
+			this.ComputeVertexNormal();
+		for (var i = 0; i < this.indices.length / 3; i++) {
 			for (var j = 0; j < 3; j++) {
 				var id = this.indices[i * 3 + j];
 				vertexBuffer.push(vec3UpgradeToVec4(this.vertices[id]));

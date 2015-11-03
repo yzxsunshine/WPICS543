@@ -55,7 +55,7 @@ function Cylinder (topRadius, bottomRadius, height, numFacets, colorSet) {
 	}
 		
 	for (var i = 0; i < numFacets; i++) {
-		var normal = vec3Scale(vec3Add(this.vertices[i + topCenterID + 1], this.vertices[(i + 1) % numFacets + bottomCenterID + 1]), 0.5);
+		var normal = vec3Divide(vec3Add(this.vertices[i + topCenterID + 1], this.vertices[(i + 1) % numFacets + bottomCenterID + 1]), 0.5);
 		normal = vec3Normalize(normal);
 		this.faceNormals.push(normal.slice(0));
 		this.faceNormals.push(normal.slice(0));

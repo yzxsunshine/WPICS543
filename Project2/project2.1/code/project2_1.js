@@ -5,7 +5,9 @@ var colors = [];
 var normals = [];
 
 var theta = [ 0.0, 0.0, 0.0 ];
+var trans = [ 0.0, 0.0, 0.0 ];
 var thetaLoc;
+var transLoc;
 var axis = 0;
 var xAxis = 0;
 var yAxis = 1;
@@ -30,9 +32,22 @@ const up = vec3( 0.0, 1.0, 0.0 );
 
 
 
+
 var cylinder;
+var sphere;
+var polyCylinder;
+var pointList;
+var pcRadius = 0.1;
 var lSystem;
 
+function GeneratePointList() {
+	pointList = [];
+	pointList.push(vec3(-1, -1, 0));
+	pointList.push(vec3(0, 0, 0));
+	pointList.push(vec3(1, 0, 1));
+	pointList.push(vec3(0, 1, 0));
+	return pointList;
+}
 
 window.onload = function init()
 {
@@ -56,8 +71,15 @@ window.onload = function init()
     ];
 	
 	//cylinder = new Cylinder(0.3, 0.5, 0.6, 10, [1.0, 0.0, 0.0, 1.0]);
-    cylinder = new Cylinder(0.3, 0.5, 0.6, 10, vertexColors);
-	cylinder.DumpToVertextArray(points, normals, colors, 0);
+    //cylinder = new Cylinder(0.3, 0.5, 0.6, 10, vertexColors);
+	//cylinder.DumpToVertextArray(points, normals, colors, 0);
+	
+	//sphere = new Sphere(0.3, 10, vertexColors);
+	//sphere.DumpToVertextArray(points, normals, colors, 1);
+	pointList = GeneratePointList();
+	polyCylinder = new PolyCylinder(pointList, pcRadius, vertexColors, vertexColors, 1);
+	polyCylinder.DumpToVertextArray(points, normals, colors);
+	
     gl.viewport( 0, 0, canvas.width, canvas.height );
 
     aspect = canvas.width/canvas.height;
@@ -92,12 +114,13 @@ window.onload = function init()
     gl.enableVertexAttribArray( vPosition );
 
 	thetaLoc = gl.getUniformLocation(program, "theta");
+	transLoc = gl.getUniformLocation(program, "trans");
 	modelViewLoc = gl.getUniformLocation( program, "modelView" );
     projectionLoc = gl.getUniformLocation( program, "projection" );
 
     //event listeners for buttons
 
-    document.getElementById( "xButton" ).onclick = function ( ) {
+   /* document.getElementById( "xButton" ).onclick = function ( ) {
       axis = xAxis;
     };
     document.getElementById( "yButton" ).onclick = function ( ) {
@@ -106,7 +129,7 @@ window.onload = function init()
     document.getElementById( "zButton" ).onclick = function ( ) {
       axis = zAxis;
     };
-	
+	*/
     render();
 };
 
@@ -117,17 +140,30 @@ function render() {
                 radius * Math.sin( camTheta ) * Math.sin( camPhi ),
                 radius * Math.cos( camTheta ) );
     mvMatrix = lookAt( eye, at , up );
-    var transMat = translate( 0.0, 0.0, 0.0 );
-    mvMatrix = mult( mvMatrix, transMat );
+   // var transMat = translate( 0.0, 0.0, 0.0 );
+    //mvMatrix = mult( mvMatrix, transMat );
     pMatrix = perspective( fovy, aspect, near, far );
 
-    gl.uniformMatrix4fv( modelViewLoc, false, flatten( mvMatrix ) );
+	/*
+	gl.uniformMatrix4fv( modelViewLoc, false, flatten( mvMatrix ) );
     gl.uniformMatrix4fv( projectionLoc, false, flatten( pMatrix ) );
-
     // Update the rotation.
     theta[axis] += 2.0;
     gl.uniform3fv( thetaLoc, theta );
 	
+	trans = [ -1.0, 0.0, 0.0 ];
+    gl.uniform3fv( transLoc, trans );
+	
 	gl.drawArrays( gl.TRIANGLES, cylinder.startIndex, cylinder.vertexNum );
+	
+	trans = [ 1.0, 0.0, 0.0 ];
+    gl.uniform3fv( transLoc, trans );
+	
+	gl.drawArrays( gl.TRIANGLES, sphere.startIndex, sphere.vertexNum );
+	*/
+	polyCylinder.Render(mvMatrix, modelViewLoc);
+	//gl.uniformMatrix4fv( modelViewLoc, false, flatten( mvMatrix ) );
+    gl.uniformMatrix4fv( projectionLoc, false, flatten( pMatrix ) );
+	
 	requestAnimFrame( render );
 }

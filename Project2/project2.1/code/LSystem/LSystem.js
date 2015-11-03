@@ -38,6 +38,7 @@ function LoadLSystemFile (evt) {
 			  }
 		  }
 		  lSystem = new LSystem(len, iter, rot, rep, start, rules);
+		  document.getElementById("LSystemOutput").innerText = lSystem.finalString;
       }
       r.readAsText(f);
     } 
@@ -66,7 +67,7 @@ function LSystem (len, iter, rot, rep, start, rules) {
 					break;
 				}
 			}
-			if (replaceNum == 0) {
+			if (replaceNum == 0 && this.finalString[j] != '\n' && this.finalString[j] != '\r' && this.finalString[j] != '\0') {
 				nextIterString = nextIterString + this.finalString[j];
 			}
 		}
@@ -84,7 +85,7 @@ function LSystem (len, iter, rot, rep, start, rules) {
 				break;
 			}
 		}
-		if (replaced == 0) {
+		if (replaced == 0 && this.finalString[j] != '\n' && this.finalString[j] != '\r' && this.finalString[j] != '\0') {
 			repStr += this.finalString[i];
 		}
 	}
