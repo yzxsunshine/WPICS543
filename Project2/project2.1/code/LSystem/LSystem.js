@@ -27,6 +27,9 @@ function LoadLSystemFile (evt) {
 				  rot[0] = parseFloat(items[3]);
 			  }
 			  else if (items[0] == "rep:") {
+				  items[1].replace('\r', '');
+				  items[1].replace('\n', '');
+				  items[1].replace(' ', '');
 				  var replaces = items[1].split(',');
 				  rep.push(replaces[0] + replaces[1]);
 			  }
@@ -34,11 +37,15 @@ function LoadLSystemFile (evt) {
 				  start = items[1];
 			  }
 			  else {
+				  items[1].replace('\r', '');
+				  items[1].replace('\n', '');
+				  items[1].replace(' ', '');
 				  rules.push(items[0][0] + items[1]);
 			  }
 		  }
 		  lSystem = new LSystem(len, iter, rot, rep, start, rules);
-		  document.getElementById("LSystemOutput").innerText = lSystem.finalString;
+		  //document.getElementById("LSystemOutput").innerText = lSystem.finalString;
+		  document.getElementById("LSystemOutput").innerHTML = "<p>" + lSystem.finalString + "</p>";
       }
       r.readAsText(f);
     } 
