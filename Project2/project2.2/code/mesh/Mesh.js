@@ -37,7 +37,7 @@ Mesh.prototype.ComputeVertexNormal = function () {
 	
 	for (var i = 0; i < this.normals.length; i++) {
 		if (normalCount[i] > 0) {
-			this.normals[i] = vec3Scale(this.normals[i], normalCount[i]);	
+			this.normals[i] = vec3Multiply(this.normals[i], normalCount[i]);	
 		}
 	}
 }

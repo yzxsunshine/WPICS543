@@ -34,7 +34,8 @@ var sphere;
 var polyCylinder;
 var pointList;
 var pcRadius = 0.1;
-var lSystem;
+var lSystem = 0;
+var terrain = 0;
 
 var vertexColors = [
 	[ 0.0, 0.0, 0.0, 1.0 ],  // black
@@ -56,7 +57,17 @@ function GeneratePointList() {
 	return pointList;
 }
 
-function initializeGLShader() {
+function InitializePointList () {
+	polyCylinder = lSystem.BuildPolyCylinder(pcRadius, vertexColors, vertexColors);
+	polyCylinder.DumpToVertextArray(points, normals, colors);
+}
+
+function InitializeTerrain() {
+	terrain = new Terrain(4, 4, 10, 10, vertexColors);
+	terrain.DumpToVertextArray(points, normals, colors);
+}
+
+function InitializeGLShader() {
 	
 	//cylinder = new Cylinder(0.3, 0.5, 0.6, 10, [1.0, 0.0, 0.0, 1.0]);
     //cylinder = new Cylinder(0.3, 0.5, 0.6, 10, vertexColors);
@@ -67,8 +78,9 @@ function initializeGLShader() {
 	//pointList = GeneratePointList();
 	//polyCylinder = new PolyCylinder(pointList, pcRadius, vertexColors, vertexColors, 1);
 	//polyCylinder.DumpToVertextArray(points, normals, colors);
-	polyCylinder = lSystem.BuildPolyCylinder(pcRadius, vertexColors, vertexColors);
-	polyCylinder.DumpToVertextArray(points, normals, colors);
+	
+	//polyCylinder = lSystem.BuildPolyCylinder(pcRadius, vertexColors, vertexColors);
+	//polyCylinder.DumpToVertextArray(points, normals, colors);
 	
 	//
     //  Load shaders and initialize attribute buffers
@@ -191,7 +203,9 @@ function LoadLSystemFile (evt) {
 			  }
 		  }
 		  lSystem = new LSystem(len, iter, rot, rep, start, rules);
-		  initializeGLShader();
+		  InitializePointList();
+		  InitializeGLShader();
+		  //
 		  //document.getElementById("LSystemOutput").innerText = lSystem.finalString;
 		  document.getElementById("LSystemOutput").innerHTML = "<p>" + lSystem.finalString + "</p>";
       }
@@ -219,7 +233,8 @@ window.onload = function init()
     
     gl.enable(gl.DEPTH_TEST);
 
-
+	InitializeTerrain();
+	InitializeGLShader();
 };
 
 
@@ -232,11 +247,17 @@ function render() {
     //var transMat = translate( 0.0, 0.0, 0.0 );
     //mvMatrix = mult( mvMatrix, transMat );
     pMatrix = perspective( fovy, aspect, near, far );
+	gl.uniformMatrix4fv( modelViewLoc, false, flatten( mvMatrix ) );
+	gl.uniformMatrix4fv( projectionLoc, false, flatten( pMatrix ) );
 	
-	lSystem.ExecuteTurtleString(polyCylinder, mvMatrix, modelViewLoc);
+	if (terrain != 0) {
+		gl.drawArrays( gl.TRIANGLES, terrain.startIndex, terrain.vertexNum );
+	}
+	if (lSystem != 0) {
+		lSystem.ExecuteTurtleString(polyCylinder, mvMatrix, modelViewLoc);
+	}
+	
 	//polyCylinder.Render(mvMatrix, modelViewLoc);
-	//gl.uniformMatrix4fv( modelViewLoc, false, flatten( mvMatrix ) );
-    gl.uniformMatrix4fv( projectionLoc, false, flatten( pMatrix ) );
 	
 	requestAnimFrame( render );
 }
