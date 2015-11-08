@@ -13,10 +13,10 @@ var yAxis = 1;
 var zAxis = 2;
 
 var near = 0.1;
-var far = 100.0;
-var radius = 4.0;
-var camTheta  = 0.0;
-var camPhi    = 0.0;
+var far = 1000.0;
+var radius = 80.0;
+var camTheta  = 0.1;
+var camPhi    = 0.1;
 var dr = 5.0 * Math.PI/180.0;
 
 var  fovy = 45.0;  // Field-of-view in Y direction angle (in degrees)
@@ -58,12 +58,12 @@ function GeneratePointList() {
 }
 
 function InitializePointList () {
-	polyCylinder = lSystem.BuildPolyCylinder(pcRadius, vertexColors, vertexColors);
+	polyCylinder = lSystem.BuildPolyCylinder(pcRadius, vec4(0.8, 0.6, 0.1, 1.0), vec4(0.2, 1.0, 0.4, 1.0));
 	polyCylinder.DumpToVertextArray(points, normals, colors);
 }
 
 function InitializeTerrain() {
-	terrain = new Terrain(4, 4, 10, 10, vertexColors);
+	terrain = new Terrain(rawData, 64, 64, 32, 32, vec4(0.5, 0.6, 0.3, 1.0));
 	terrain.DumpToVertextArray(points, normals, colors);
 }
 
@@ -204,6 +204,7 @@ function LoadLSystemFile (evt) {
 		  }
 		  lSystem = new LSystem(len, iter, rot, rep, start, rules);
 		  InitializePointList();
+		  InitializeTerrain();
 		  InitializeGLShader();
 		  //
 		  //document.getElementById("LSystemOutput").innerText = lSystem.finalString;
@@ -233,8 +234,8 @@ window.onload = function init()
     
     gl.enable(gl.DEPTH_TEST);
 
-	InitializeTerrain();
-	InitializeGLShader();
+	//InitializeTerrain();
+	//InitializeGLShader();
 };
 
 
@@ -254,6 +255,8 @@ function render() {
 		gl.drawArrays( gl.TRIANGLES, terrain.startIndex, terrain.vertexNum );
 	}
 	if (lSystem != 0) {
+		var rotMat = rotate(-90, 1.0, 0.0, 0.0 );
+		mvMatrix = mult( mvMatrix, rotMat );
 		lSystem.ExecuteTurtleString(polyCylinder, mvMatrix, modelViewLoc);
 	}
 	
