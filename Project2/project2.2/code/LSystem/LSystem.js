@@ -129,6 +129,9 @@ LSystem.prototype.ExecuteTurtleString = function (polyCylinder, mvMatrix, mvMatr
 			curMVMatrix.matrix = true;
 			mvMatrixStack.pop();
 			break;
+		default :
+			//alert(this.finalString[i]);
+			break;
 		}
 	}
 }

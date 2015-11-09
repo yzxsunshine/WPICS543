@@ -180,8 +180,8 @@ function LoadFile (f) {
 			}
 			else if (items[0] == "rot:") {
 				rot[0] = parseFloat(items[1]);
-				rot[0] = parseFloat(items[2]);
-				rot[0] = parseFloat(items[3]);
+				rot[1] = parseFloat(items[2]);
+				rot[2] = parseFloat(items[3]);
 			}
 			else if (items[0] == "rep:") {
 				items[1].replace('\r', '');
