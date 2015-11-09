@@ -9,6 +9,8 @@ function Terrain(data, width, length, columns, rows, colorSet) {
     this.numCols = columns;
     this.unitWidth = width * 1.0 /  columns;
     this.unitLength = length * 1.0 / rows;
+	this.xSize = width;
+	this.zSize = length;
 	
 	var colorMod = colorSet.length;
 	if (colorSet.length == 4) {	// possibly to be a single vec4 color
@@ -50,6 +52,10 @@ function Terrain(data, width, length, columns, rows, colorSet) {
             }
         }
     }
+}
+
+Terrain.prototype.GetVertices = function (row, col) {
+	return this.vertices[row * this.numCols + col];
 }
 
 Terrain.prototype.GetHeightFromImage = function (img, width, height) {

@@ -1,3 +1,10 @@
+function rulesProbability(prob, str) {
+	this.probability = [];
+	this.string = [];
+	this.probability.push(prob);
+	this.string.push(str);
+}
+
 function LoadLSystemFile (evt) {
 	var f = evt.target.files[0]; 
     if (f) {
@@ -36,11 +43,27 @@ function LoadLSystemFile (evt) {
 			  else if (items[0] == "start:") {
 				  start = items[1];
 			  }
-			  else {
+			  else if (item.length > 1) {
 				  items[1].replace('\r', '');
 				  items[1].replace('\n', '');
 				  items[1].replace(' ', '');
-				  rules.push(items[0][0] + items[1]);
+				  if(typeof rules[items[0][0]] == undefined || typeof rules[items[0][0]] == null) {
+					  if (items[0][1] == "(") {
+						  var prob = parseFloat(items[0].substring(2, items[0].length - 2));
+						  var newRule = new Probability(prob, items[1]);
+						  rules[items[0][0]] = {newRule};
+					  }
+					  else {
+						  var newRule = new Probability(1, items[1]);
+						  rules[items[0][0]] = {newRule};
+					  }
+				  }
+				  else {
+					  var prob = parseFloat(items[0].substring(2, items[0].length - 2));
+					  var newRule = new Probability(prob, items[1]);
+					  rules[items[0][0]].push(newRule);
+				  }
+				  //rules.push(items[0][0] + items[1]);
 			  }
 		  }
 		  lSystem = new LSystem(len, iter, rot, rep, start, rules);
@@ -69,7 +92,12 @@ function LSystem (len, iter, rot, rep, start, rules) {
 			var replaceNum = 0;
 			for (var k = 0; k < this.ruleString.length; k++) {
 				if (this.finalString[j] == this.ruleString[k][0]) {
-					nextIterString = nextIterString + this.ruleString[k].slice(1);
+					if(this.ruleString[k][1] == "(") {
+						
+					}
+					else {
+						nextIterString = nextIterString + this.ruleString[k].slice(1);	// nor stochastic
+					}
 					replaceNum++;
 					break;
 				}

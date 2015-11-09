@@ -34,10 +34,8 @@ var sphere;
 var polyCylinder;
 var pointList;
 var pcRadius = 0.1;
-var lSystems = [];
-var treeTrans = [];
+var lSystem = 0;
 var terrain = 0;
-var numTrees = 10;
 
 var vertexColors = [
 	[ 0.0, 0.0, 0.0, 1.0 ],  // black
@@ -59,8 +57,8 @@ function GeneratePointList() {
 	return pointList;
 }
 
-function InitializePointList (lSystemObj) {
-	polyCylinder = lSystemObj.BuildPolyCylinder(pcRadius, vec4(0.8, 0.6, 0.1, 1.0), vec4(0.2, 1.0, 0.4, 1.0));
+function InitializePointList () {
+	polyCylinder = lSystem.BuildPolyCylinder(pcRadius, vec4(0.8, 0.6, 0.1, 1.0), vec4(0.2, 1.0, 0.4, 1.0));
 	polyCylinder.DumpToVertextArray(points, normals, colors);
 }
 
@@ -220,17 +218,9 @@ function LoadFile (f) {
 				//rules.push(items[0][0] + items[1]);
 			}
 		}
-		
+		lSystem = new LSystem(len, iter, rot, rep, start, rules);
+		InitializePointList();
 		InitializeTerrain();
-		for (var i = 0; i < numTrees; i++) {
-			var lSystem = new LSystem(len, iter, rot, rep, start, rules);
-			var xCoord = Math.floor(Math.random() * terrain.numRows);
-			var zCoord = Math.floor(Math.random() * terrain.numCols);
-			var pos = terrain.GetVertices(xCoord, zCoord);
-			lSystems.push(lSystem);
-			treeTrans.push(pos);
-		}
-		InitializePointList(lSystems[0]);
 		InitializeGLShader();
 		//
 		//document.getElementById("LSystemOutput").innerText = lSystem.finalString;
@@ -250,7 +240,6 @@ function LoadLSystemFile (evt) {
     }
 }
 
-
 window.onload = function init()
 {
     var canvas = document.getElementById( "gl-canvas" );
@@ -267,6 +256,7 @@ window.onload = function init()
     gl.enable( gl.DEPTH_TEST );
     
     gl.enable(gl.DEPTH_TEST);
+
 	//InitializeTerrain();
 	//InitializeGLShader();
 };
@@ -287,17 +277,10 @@ function render() {
 	if (terrain != 0) {
 		gl.drawArrays( gl.TRIANGLES, terrain.startIndex, terrain.vertexNum );
 	}
-	if (lSystems.length > 0) {
-		
-		for (var i = 0; i < numTrees; i++) {
-			var localMat = mvMatrix.slice(0);
-			localMat.matrix = true;
-			var transMat = translate(treeTrans[i][0], treeTrans[i][1], treeTrans[i][2]);
-			localMat = mult( localMat, transMat );
-			var rotMat = rotate(-90, 1.0, 0.0, 0.0 );
-			localMat = mult( localMat, rotMat );
-			lSystems[i].ExecuteTurtleString(polyCylinder, localMat, modelViewLoc);
-		}
+	if (lSystem != 0) {
+		var rotMat = rotate(-90, 1.0, 0.0, 0.0 );
+		mvMatrix = mult( mvMatrix, rotMat );
+		lSystem.ExecuteTurtleString(polyCylinder, mvMatrix, modelViewLoc);
 	}
 	
 	//polyCylinder.Render(mvMatrix, modelViewLoc);

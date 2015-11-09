@@ -1,3 +1,16 @@
+function rulesProbability(rep, prob, str) {
+	this.repCharacter = rep;
+	this.probability = [];
+	this.replacement = [];
+	this.probability.push(prob);
+	this.replacement.push(str);
+}
+
+rulesProbability.prototype.AddRule = function (prob, str) {
+	this.probability.push(prob);
+	this.replacement.push(str);
+}
+
 function LSystem (len, iter, rot, rep, start, rules) {
 	this.stepLength = len;
 	this.iterNum = iter;
@@ -12,8 +25,16 @@ function LSystem (len, iter, rot, rep, start, rules) {
 		for (var j = 0; j < this.finalString.length; j++) {
 			var replaceNum = 0;
 			for (var k = 0; k < this.ruleString.length; k++) {
-				if (this.finalString[j] == this.ruleString[k][0]) {
-					nextIterString = nextIterString + this.ruleString[k].slice(1);
+				if (this.finalString[j] == this.ruleString[k].repCharacter) {
+					var randNum = Math.random();
+					var count = 0;
+					for (var l = 0; l < this.ruleString[k].replacement.length; l++) {
+						count += this.ruleString[k].probability[l];
+						if (randNum < count) {
+							nextIterString = nextIterString + this.ruleString[k].replacement[l].slice(0);
+							break;
+						}
+					}
 					replaceNum++;
 					break;
 				}
@@ -23,7 +44,7 @@ function LSystem (len, iter, rot, rep, start, rules) {
 			}
 		}
 		this.finalString = nextIterString;
-		alert(this.finalString);
+		//alert(this.finalString);
 	}
 	
 	var repStr = "";
@@ -42,7 +63,7 @@ function LSystem (len, iter, rot, rep, start, rules) {
 	}
 	this.finalString = repStr;
 	
-	alert(this.finalString);
+	//alert(this.finalString);
 }
 
 LSystem.prototype.BuildPolyCylinder = function (radius, cylinderColorSet, sphereColorSet) {
