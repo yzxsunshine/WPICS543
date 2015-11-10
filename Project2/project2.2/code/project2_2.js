@@ -1,3 +1,17 @@
+/* Module      : project2_2.js
+ * Author      : Zhixin Yan
+ * Email       : zyan@wpi.edu
+ * Course      : CS 543
+ *
+ * Description : Main entry of project2_2
+ *
+ * Date        : 2015/11/10
+ *
+ * Special Usage : Before you include this file, you need include Lsystem.js and all its dependent files in your html file as well.
+ * (c) Copyright 2008, Worcester Polytechnic Institute.
+ */
+ 
+/* -- GLOBAL VARIABLES --------------------------------------------------- */
 var gl;
 var points = [];
 var colors = [];
@@ -50,39 +64,34 @@ var vertexColors = [
     [ 1.0, 1.0, 1.0, 1.0 ]   // white
 ];
 	
-function GeneratePointList() {
-	pointList = [];
-	pointList.push(vec3(-1, -1, 0));
-	pointList.push(vec3(0, 0, 0));
-	pointList.push(vec3(1, 0, 1));
-	pointList.push(vec3(0, 1, 0));
-	return pointList;
-}
-
+/* ----------------------------------------------------------------------- */
+/* Function    : InitializePointList ( lSystemObj )
+ *
+ * Description : add points to vertex buffer according to lsystem rules.
+ *
+ * Parameters  : lSystemObj : LSystem
+ */
 function InitializePointList (lSystemObj) {
 	polyCylinder = lSystemObj.BuildPolyCylinder(pcRadius, vec4(0.8, 0.6, 0.1, 1.0), vec4(0.2, 1.0, 0.4, 1.0));
 	polyCylinder.DumpToVertextArray(points, normals, colors);
 }
 
+/* ----------------------------------------------------------------------- */
+/* Function    : InitializeTerrain (  )
+ *
+ * Description : initialize terrain.
+ */
 function InitializeTerrain() {
 	terrain = new Terrain(rawData, 64, 64, 32, 32, vec4(0.5, 0.6, 0.3, 1.0));
 	terrain.DumpToVertextArray(points, normals, colors);
 }
 
+/* ----------------------------------------------------------------------- */
+/* Function    : InitializeTerrain (  )
+ *
+ * Description : initialize webgl shaders.
+ */
 function InitializeGLShader() {
-	
-	//cylinder = new Cylinder(0.3, 0.5, 0.6, 10, [1.0, 0.0, 0.0, 1.0]);
-    //cylinder = new Cylinder(0.3, 0.5, 0.6, 10, vertexColors);
-	//cylinder.DumpToVertextArray(points, normals, colors, 0);
-	
-	//sphere = new Sphere(0.3, 10, vertexColors);
-	//sphere.DumpToVertextArray(points, normals, colors, 1);
-	//pointList = GeneratePointList();
-	//polyCylinder = new PolyCylinder(pointList, pcRadius, vertexColors, vertexColors, 1);
-	//polyCylinder.DumpToVertextArray(points, normals, colors);
-	
-	//polyCylinder = lSystem.BuildPolyCylinder(pcRadius, vertexColors, vertexColors);
-	//polyCylinder.DumpToVertextArray(points, normals, colors);
 	
 	//
     //  Load shaders and initialize attribute buffers
@@ -128,7 +137,11 @@ function InitializeGLShader() {
 }
 
 document.onkeydown = checkKey;
-
+/* ----------------------------------------------------------------------- */
+/* Function    : checkKey (  )
+ *
+ * Description : add key event to change camera
+ */
 function checkKey(e) {
 
     e = e || window.event;
@@ -159,6 +172,11 @@ function checkKey(e) {
 	}
 }
 
+/* ----------------------------------------------------------------------- */
+/* Function    : LoadFile ( f )
+ *
+ * Description : load files for LSystem
+ */
 function LoadFile (f) {
 	var r = new FileReader();
 	r.onload = function(e) { 
@@ -190,7 +208,12 @@ function LoadFile (f) {
 				items[1].replace('\n', '');
 				items[1].replace(' ', '');
 				var replaces = items[1].split(',');
-				rep.push(replaces[0] + replaces[1]);
+				if (replaces.length > 1) {
+					rep.push(replaces[0] + replaces[1]);
+				}
+				else {
+					rep.push(replaces[0]);
+				}
 			}
 			else if (items[0] == "start:") {
 				start = items[1];

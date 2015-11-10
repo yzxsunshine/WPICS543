@@ -1,3 +1,25 @@
+/* Module      : Mesh
+ * Author      : Zhixin Yan
+ * Email       : zyan@wpi.edu
+ * Course      : CS 543
+ *
+ * Description : general class for 3d mesh
+ *
+ * Date        : 2015/11/10
+ *
+ * Special Usage : Before you include this file, you need include vec.js in your html file as well.
+ * (c) Copyright 2008, Worcester Polytechnic Institute.
+ */
+
+/* ----------------------------------------------------------------------- */
+/* Function    : Mesh (  )
+ *
+ * Description : constructor of Mesh, initialize vertices, normals, colors, indices, and face normals.
+ *
+ * Parameters  : radius : radius of sphere
+ *				 numBands : resolution of sphere	
+ *				 colorSet : color of sphere
+ */
 function Mesh () {
 	this.vertices = [];	// type vec4
 	this.normals = [];	// type vec4
@@ -42,6 +64,16 @@ Mesh.prototype.ComputeVertexNormal = function () {
 	}
 }
 
+/* ----------------------------------------------------------------------- */
+/* Function    : DumpToVertextArray ( vertexBuffer, normalBuffer, colorBuffer, shareVertex )
+ *
+ * Description : convert mesh representation to webgl representation, and dump them to vertex buffer
+ *
+ * Parameters  : vertexBuffer : vertex buffer
+ *				 normalBuffer : normal buffer
+ *				 colorBuffer : color buffer
+ *				 shareVertex : use vertex normal or face normal
+ */
 Mesh.prototype.DumpToVertextArray = function (vertexBuffer, normalBuffer, colorBuffer, shareVertex) {
 	this.startIndex = vertexBuffer.length;
 	this.vertexNum = this.indices.length;

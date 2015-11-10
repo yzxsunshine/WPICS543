@@ -1,3 +1,27 @@
+/* Module      : PolyCylinder
+ * Author      : Zhixin Yan
+ * Email       : zyan@wpi.edu
+ * Course      : CS 543
+ *
+ * Description : general class for 3d mesh
+ *
+ * Date        : 2015/11/10
+ *
+ * Special Usage : Before you include this file, you need include Cylinder.js and Sphere.js in your html file as well.
+ * (c) Copyright 2008, Worcester Polytechnic Institute.
+ */
+
+ /* ----------------------------------------------------------------------- */
+/* Function    : Sphere ( pointList, radius, cylinderColorSet, sphereColorSet, drawLastSphere )
+ *
+ * Description : constructor of Sphere, create vertices/indices/colors/normals of a sphere
+ *
+ * Parameters  : pointList : a list of points, the cylinders will be drawn from ith point to i+1th point, sphere will be drawn at each point
+ * 				 radius : radius of sphere and cylinder
+ *				 cylinderColorSet : color of cylinders	
+ *				 sphereColorSet : color of spheres
+ *				 drawLastSphere : dummy right now
+ */
 function PolyCylinder (pointList, radius, cylinderColorSet, sphereColorSet, drawLastSphere) {
 	this.points = pointList.slice(0);
 	this.radius = radius;
@@ -8,11 +32,28 @@ function PolyCylinder (pointList, radius, cylinderColorSet, sphereColorSet, draw
 	this.sphere = new Sphere(radius, 10, sphereColorSet);
 }
 
+/* ----------------------------------------------------------------------- */
+/* Function    : DumpToVertextArray ( vertexBuffer, normalBuffer, colorBuffer, shareVertex )
+ *
+ * Description : convert mesh representation to webgl representation, and dump them to vertex buffer
+ *
+ * Parameters  : points : vertex buffer
+ *				 normals : normal buffer
+ *				 colors : color buffer
+ */
 PolyCylinder.prototype.DumpToVertextArray = function (points, normals, colors) {
 	this.cylinder.DumpToVertextArray(points, normals, colors, 0);
 	this.sphere.DumpToVertextArray(points, normals, colors, 1);
 }
 
+/* ----------------------------------------------------------------------- */
+/* Function    : Render (mvMatrix, mvMatrixLoc)
+ *
+ * Description : Render polyCylinders
+ *
+ * Parameters  : mvMatrix : model view matrix
+ * 			     mvMatrixLoc : location of mv matrix in shader
+ */
 PolyCylinder.prototype.Render = function (mvMatrix, mvMatrixLoc) {
 	var localMvMatrix = mvMatrix.slice(0);
 	localMvMatrix.matrix = true;

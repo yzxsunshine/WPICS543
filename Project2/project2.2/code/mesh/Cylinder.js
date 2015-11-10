@@ -1,7 +1,32 @@
+/* Module      : Cylinder
+ * Author      : Zhixin Yan
+ * Email       : zyan@wpi.edu
+ * Course      : CS 543
+ *
+ * Description : a class to render Cylinder by webGL, it derived from Mesh class
+ *
+ * Date        : 2015/11/10
+ *
+ * Special Usage : Before you include this file, you need include Mesh.js in your html file as well.
+ * (c) Copyright 2008, Worcester Polytechnic Institute.
+ */
+
 Cylinder.prototype = new Mesh();
 Cylinder.prototype.constructor = Cylinder;
 
-
+/* ----------------------------------------------------------------------- */
+/* Function    : CreateCircle ( offset, numFacets, radius, vertices, indices, faceNormals )
+ *
+ * Description : create a 2d circle which center is offset
+ *
+ * Parameters  : offset : center of 2d circle
+ *				 numFacets : number of facets in one circle
+ *				 radius : radius of sphere
+ *				 vertices : array of vritices	
+ *				 indices : array of indices
+ *				 faceNormals : array of face normals
+ */
+ 
 var CreateCircle = function (offset, numFacets, radius, vertices, indices, faceNormals) {
 	var deltaAngle = 2 * Math.PI / numFacets;
 	var startIndex = vertices.length;
@@ -18,6 +43,17 @@ var CreateCircle = function (offset, numFacets, radius, vertices, indices, faceN
 	}
 }
 	
+/* ----------------------------------------------------------------------- */
+/* Function    : Cylinder ( topRadius, bottomRadius, height, numFacets, colorSet )
+ *
+ * Description : constructor of Sphere, create vertices/indices/colors/normals of a sphere
+ *
+ * Parameters  : topRadius : radius of top circle
+ *				 bottomRadius : radius of bottom circle
+ *				 height : height of cylinder
+ *				 numFacets : number of facets for one circle
+ *				 colorSet : color of sphere
+ */	
 function Cylinder (topRadius, bottomRadius, height, numFacets, colorSet) {
 	this.topRadius = topRadius;
 	this.bottomRadius = bottomRadius;

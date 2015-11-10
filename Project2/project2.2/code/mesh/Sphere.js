@@ -1,6 +1,28 @@
+/* Module      : Sphere
+ * Author      : Zhixin Yan
+ * Email       : zyan@wpi.edu
+ * Course      : CS 543
+ *
+ * Description : a class to render sphere by webGL, it derived from Mesh class
+ *
+ * Date        : 2015/11/10
+ *
+ * Special Usage : Before you include this file, you need include Mesh.js in your html file as well.
+ * (c) Copyright 2008, Worcester Polytechnic Institute.
+ */
+
 Sphere.prototype = new Mesh();
 Sphere.prototype.constructor = Sphere;
 
+/* ----------------------------------------------------------------------- */
+/* Function    : Sphere ( radius, numBands, colorSet )
+ *
+ * Description : constructor of Sphere, create vertices/indices/colors/normals of a sphere
+ *
+ * Parameters  : radius : radius of sphere
+ *				 numBands : resolution of sphere	
+ *				 colorSet : color of sphere
+ */
 function Sphere (radius, numBands, colorSet) {
 	var colorMod = colorSet.length;
 	if (colorSet.length == 4) {	// possibly to be a single vec4 color

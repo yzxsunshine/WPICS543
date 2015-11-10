@@ -1,6 +1,31 @@
+/* Module      : Terrain
+ * Author      : Zhixin Yan
+ * Email       : zyan@wpi.edu
+ * Course      : CS 543
+ *
+ * Description : a class to render Terrain by webGL, it derived from Mesh class
+ *
+ * Date        : 2015/11/10
+ *
+ * Special Usage : Before you include this file, you need include Mesh.js in your html file as well.
+ * (c) Copyright 2008, Worcester Polytechnic Institute.
+ */
+
 Terrain.prototype = new Mesh();
 Terrain.prototype.constructor = Terrain;
 
+/* ----------------------------------------------------------------------- */
+/* Function    : Terrain(data, width, length, columns, rows, colorSet) 
+ *
+ * Description : constructor of Sphere, create vertices/indices/colors/normals of a sphere
+ *
+ * Parameters  : data : height (y) data of the terrain
+ *				 width : z size of terrain 
+ *				 length : x size of terrain
+ *				 columns : resolution along z axis
+ * 				 rows : resolution along x axis
+ *				 colorSet : color of terrain
+ */
 function Terrain(data, width, length, columns, rows, colorSet) {
     this.vertices = [];
     this.indices = [];
@@ -54,10 +79,21 @@ function Terrain(data, width, length, columns, rows, colorSet) {
     }
 }
 
+/* ----------------------------------------------------------------------- */
+/* Function    : GetVertices ( radius, numBands, colorSet )
+ *
+ * Description : return 3d vertex on the terrain
+ *
+ * Parameters  : row : row index
+ *				 col : col index 
+ */
 Terrain.prototype.GetVertices = function (row, col) {
 	return this.vertices[row * this.numCols + col];
 }
 
+/*
+* DUMMY right now
+*/
 Terrain.prototype.GetHeightFromImage = function (img, width, height) {
     var canvas = document.createElement( 'canvas-tmp' );
 	canvas.display = none;
