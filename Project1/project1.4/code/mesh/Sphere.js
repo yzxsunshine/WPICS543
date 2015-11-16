@@ -31,13 +31,6 @@ function Sphere (radius, numBands, colorSet) {
 		}
 	}
 	var color;
-	this.vertices = [];	// type vec4
-	this.normals = [];	// type vec4
-	this.colors = [];	// type vec4
-	this.indices = [];	// type int
-	this.faceNormals = [];
-	this.faceColors = [];
-	
 	for (var i = 0; i <= numBands; i++) {	// connect a circle of half circles
 		var theta = i * Math.PI / numBands;
 		var sinTheta = Math.sin(theta);

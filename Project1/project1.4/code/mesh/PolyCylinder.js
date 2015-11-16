@@ -66,7 +66,9 @@ PolyCylinder.prototype.Render = function (mvMatrix, mvMatrixLoc) {
 		var scaleMat = scalem(1.0, s, 1.0);
 		var angle = Math.acos(dot(vec3(0, 1, 0), direction));
 		var axis = vec3(0, 1, 0);
-		if (angle > 0.001) {
+		while (angle > Math.PI / 2)
+			angle -= Math.PI;
+		if (Math.abs(angle) > 0.001 ) {
 			axis = vec3Normalize(cross(vec3(0, 1, 0), direction));
 		}
 		var rotMat = rotate(angle * 180 / Math.PI, axis[0], axis[1], axis[2]);
