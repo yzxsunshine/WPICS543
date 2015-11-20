@@ -7,7 +7,10 @@
 <script id="vertex-shader" type="x-shader/x-vertex">
 attribute vec4 vPosition;
 attribute vec4 vColor;
+attribute  vec2 vTexCoord;
+
 varying vec4 fColor;
+varying vec2 fTexCoord;
 
 uniform    vec3 theta;
 uniform    vec3 trans;
@@ -44,11 +47,10 @@ void main()
 		      0.0, 1.0, 0.0, 0.0,
 		      0.0, 0.0, 1.0, 0.0,
 		      trans.x, trans.y, trans.z, 1.0 );
-			  
-    fColor = vColor;
 
     gl_Position = projection * modelView * tMat * rz * ry * rx * vPosition;
     fColor = vColor;
+    fTexCoord = vTexCoord;
 }
 </script>
 
@@ -56,10 +58,13 @@ void main()
 precision mediump float;
    
 varying vec4 fColor;
+varying  vec2 fTexCoord;
+
+uniform sampler2D texture;
 
 void main()
 {
-    gl_FragColor = fColor;
+    gl_FragColor = fColor * texture2D( texture, fTexCoord );
 }
 </script>
 
@@ -70,11 +75,9 @@ void main()
 <script type="text/javascript" src="mesh/Mesh.js"></script>
 <script type="text/javascript" src="mesh/Cylinder.js"></script>
 <script type="text/javascript" src="mesh/Sphere.js"></script>
-<script type="text/javascript" src="mesh/PolyCylinder.js"></script>
 <script type="text/javascript" src="mesh/Cube.js"></script>
 <script type="text/javascript" src="model/Spirit3D.js"></script>
-<script type="text/javascript" src="model/Lamp.js"></script>
-<script type="text/javascript" src="project1_4.js"></script>
+<script type="text/javascript" src="project3_1.js"></script>
 </head>
 
 <body>
