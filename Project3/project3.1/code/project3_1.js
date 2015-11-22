@@ -55,12 +55,15 @@ var modelViewLoc, projectionLoc;
 
 var eye;
 var at = vec3(0.0, 0.0, 0.0);
-const up = vec3(0.0, 1.0, 0.0);
+var up = vec3(0.0, 1.0, 0.0);
 
 var ground;
 
 var LAMP_HEIGHT = 10;
 var TRASHBIN_HEIGHT = 3;
+
+var TRANSLATION_UNIT = 1;
+var ROTATION_UNIT = 0.2 * 1.0 / Math.PI;
 
 var vertexColors = [
 	[ 0.0, 0.0, 0.0, 1.0 ],  // black
@@ -91,6 +94,8 @@ var texelsPerSquareSide = texSize / squaresPerSide;
 // Color depth.
 var tDepth = 4;
 
+var shiftPressed = 0;
+var ctrlPressed = 0;
 
 // Create a checkerboard pattern using floats
 var image1 = new Uint8Array( tDepth * texSize * texSize );
@@ -225,6 +230,46 @@ function InitializeGLShader() {
 }
 
 document.onkeydown = checkKey;
+document.onkeyup = cancelKey;
+var rotCos = Math.cos(ROTATION_UNIT);
+var rotSin = Math.sin(ROTATION_UNIT);
+var xRotMatPos = [];
+xRotMatPos.push(vec3(1, 0, 0));
+xRotMatPos.push(vec3(0, rotCos, -rotSin));
+xRotMatPos.push(vec3(0, rotSin, rotCos));
+
+var yRotMatPos = [];
+yRotMatPos.push(vec3(rotCos, 0, rotSin));
+yRotMatPos.push(vec3(0, 1, 0));
+yRotMatPos.push(vec3(-rotSin, 0, rotCos));
+
+var zRotMatPos = [];
+zRotMatPos.push(vec3(rotCos, -rotSin, 0));
+zRotMatPos.push(vec3(rotSin, rotCos, 0));
+zRotMatPos.push(vec3(0, 0, 1));
+
+rotCos = Math.cos(-ROTATION_UNIT);
+rotSin = Math.sin(-ROTATION_UNIT);
+var xRotMatNeg = [];
+xRotMatNeg.push(vec3(1, 0, 0));
+xRotMatNeg.push(vec3(0, rotCos, -rotSin));
+xRotMatNeg.push(vec3(0, rotSin, rotCos));
+
+var yRotMatNeg = [];
+yRotMatNeg.push(vec3(rotCos, 0, rotSin));
+yRotMatNeg.push(vec3(0, 1, 0));
+yRotMatNeg.push(vec3(-rotSin, 0, rotCos));
+
+var zRotMatNeg = [];
+zRotMatNeg.push(vec3(rotCos, -rotSin, 0));
+zRotMatNeg.push(vec3(rotSin, rotCos, 0));
+zRotMatNeg.push(vec3(0, 0, 1));
+
+function ResetCamera() {
+	eye = vec3(0, 10, 50);
+	at = vec3(0, 10, 0);
+	up = vec3(0, 1, 0);
+}
 /* ----------------------------------------------------------------------- */
 /* Function    : checkKey (  )
  *
@@ -234,32 +279,117 @@ function checkKey(e) {
 
     e = e || window.event;
 
-    if (e.keyCode == '38') {	
+	if (e.keyCode == '16') {	
         // up arrow
-		radius += 0.1;
+		shiftPressed = 1;
+    }
+	
+	if (e.keyCode == '17') {	
+        // up arrow
+		ctrlPressed = 1;
+    }
+	
+    if (e.keyCode == '37') {	
+        // left arrow
+		if (ctrlPressed == 0) {
+			eye[0] -= TRANSLATION_UNIT;
+			at[0] -= TRANSLATION_UNIT;
+		}
+		else if (ctrlPressed == 1){
+			var dir = subtract(at, eye);
+			var newDir = vec3(dot(dir, yRotMatNeg[0]), dot(dir, yRotMatNeg[1]), dot(dir, yRotMatNeg[2]));
+			at = add(eye, newDir);
+			var upVec = vec3(dot(up, yRotMatNeg[0]), dot(up, yRotMatNeg[1]), dot(up, yRotMatNeg[2]));
+			up = upVec;
+		}
+		
+    }
+	else if (e.keyCode == '39') {
+        // right arrow
+		if (ctrlPressed == 0) {
+			eye[0] += TRANSLATION_UNIT;
+			at[0] += TRANSLATION_UNIT;
+		}
+		else {
+			var dir = subtract(at, eye);
+			var newDir = vec3(dot(dir, yRotMatPos[0]), dot(dir, yRotMatPos[1]), dot(dir, yRotMatPos[2]));
+			at = add(eye, newDir);
+			var upVec = vec3(dot(up, yRotMatPos[0]), dot(up, yRotMatPos[1]), dot(up, yRotMatPos[2]));
+			up = upVec;
+		}
+    }
+	
+	if (e.keyCode == '38') {	
+        // up arrow
+		if (shiftPressed == 0 && ctrlPressed == 0) {
+			eye[1] += TRANSLATION_UNIT;
+			at[1] += TRANSLATION_UNIT;
+		}
+		else if (ctrlPressed == 1){
+			var dir = subtract(at, eye);
+			var newDir = vec3(dot(dir, xRotMatNeg[0]), dot(dir, xRotMatNeg[1]), dot(dir, xRotMatNeg[2]));
+			at = add(eye, newDir);
+			var upVec = vec3(dot(up, xRotMatNeg[0]), dot(up, xRotMatNeg[1]), dot(up, xRotMatNeg[2]));
+			up = upVec;
+		}
+		else {
+			eye[2] -= TRANSLATION_UNIT;
+			at[2] -= TRANSLATION_UNIT;
+		}
     }
     else if (e.keyCode == '40') {
         // down arrow
-		radius -= 0.1;
+		if (shiftPressed == 0 && ctrlPressed == 0) {
+			eye[1] -= TRANSLATION_UNIT;
+			at[1] -= TRANSLATION_UNIT;
+		}
+		else if (ctrlPressed == 1){
+			var dir = subtract(at, eye);
+			var newDir = vec3(dot(dir, xRotMatPos[0]), dot(dir, xRotMatPos[1]), dot(dir, xRotMatPos[2]));
+			at = add(eye, newDir);
+			var upVec = vec3(dot(up, xRotMatPos[0]), dot(up, xRotMatPos[1]), dot(up, xRotMatPos[2]));
+			up = upVec;
+		}
+		else {
+			eye[2] += TRANSLATION_UNIT;
+			at[2] += TRANSLATION_UNIT;
+		}
     }
-
-	if (e.keyCode == '81') {
-		camPhi += 0.1;
+	
+	if (e.keyCode == '188' || e.keyCode == '<' ) {
+		var dir = subtract(at, eye);
+		var newDir = vec3(dot(dir, zRotMatPos[0]), dot(dir, zRotMatPos[1]), dot(dir, zRotMatPos[2]));
+		at = add(eye, newDir);
+		var upVec = vec3(dot(up, zRotMatPos[0]), dot(up, zRotMatPos[1]), dot(up, zRotMatPos[2]));
+		up = upVec.slice();
+	}
+	else if (e.keyCode == '190' || e.keyCode == '>' ) {
+		var dir = subtract(at, eye);
+		var newDir = vec3(dot(dir, zRotMatNeg[0]), dot(dir, zRotMatNeg[1]), dot(dir, zRotMatNeg[2]));
+		at = add(eye, newDir);
+		var upVec = vec3(dot(up, zRotMatNeg[0]), dot(up, zRotMatNeg[1]), dot(up, zRotMatNeg[2]));
+		up = upVec.slice();
 	}
 	
-	if (e.keyCode == '87') {
-		camPhi -= 0.1;
-	}
-	
-	if (e.keyCode == '65') {
-		camTheta += 0.1;
-	}
-	
-	if (e.keyCode == '83') {
-		camTheta -= 0.1;
+	if (e.keyCode == '82') {
+		ResetCamera();
 	}
 }
 
+function cancelKey(e) {
+
+    e = e || window.event;
+
+    if (e.keyCode == '16') {	
+        // up arrow
+		shiftPressed = 0;
+    }
+	
+	if (e.keyCode == '17') {	
+        // up arrow
+		ctrlPressed = 0;
+    }
+}
 
 window.onload = function init()
 {
@@ -278,6 +408,7 @@ window.onload = function init()
     
     gl.enable(gl.DEPTH_TEST);
 	
+	ResetCamera();
 	InitializePointList();
 	InitializeGLShader();
 };
@@ -285,9 +416,9 @@ window.onload = function init()
 
 function render() {
     gl.clear( gl.COLOR_BUFFER_BIT );
-    eye = vec3( radius * Math.sin( camTheta ) * Math.cos( camPhi ),
-                radius * Math.sin( camTheta ) * Math.sin( camPhi ),
-                radius * Math.cos( camTheta ) );
+    //eye = vec3( radius * Math.sin( camTheta ) * Math.cos( camPhi ),
+    //            radius * Math.sin( camTheta ) * Math.sin( camPhi ),
+    //            radius * Math.cos( camTheta ) );
     mvMatrix = lookAt( eye, at , up );
     //var transMat = translate( 0.0, 0.0, 0.0 );
     //mvMatrix = mult( mvMatrix, transMat );
