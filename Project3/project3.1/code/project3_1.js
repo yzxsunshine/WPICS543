@@ -13,9 +13,23 @@
  
 /* -- GLOBAL VARIABLES --------------------------------------------------- */
 var gl;
+var program;
+
 var points = [];
 var colors = [];
 var normals = [];
+var texCoords = [];
+
+var textureGround;
+var texCounter = 0;
+
+var texCoord = [
+    vec2(0, 0),
+    vec2(0, 1),
+    vec2(1, 1),
+    vec2(1, 0)
+];
+
 
 var theta = [ 0.0, 0.0, 0.0 ];
 var trans = [ 0.0, 0.0, 0.0 ];
@@ -27,10 +41,10 @@ var yAxis = 1;
 var zAxis = 2;
 
 var near = 0.3;
-var far = 100.0;
-var radius = 18.0;
-var camTheta  = 0.0;
-var camPhi    = 0.0;
+var far = 300.0;
+var radius = 50.0;
+var camTheta  = 3.2;
+var camPhi    = -2.7;
 var dr = 5.0 * Math.PI/180.0;
 
 var  fovy = 100.0;  // Field-of-view in Y direction angle (in degrees)
@@ -69,6 +83,59 @@ ColorLookup.magenta = vec4(1.0, 0.0, 1.0, 1.0);
 ColorLookup.cyan = vec4(0.0, 1.0, 1.0, 1.0);
 ColorLookup.magenta = vec4(1.0, 1.0, 1.0, 1.0);
 
+// Texture size.
+var texSize = 16;
+// Number of squares per side of the checkerboard.
+var squaresPerSide = 16;
+var texelsPerSquareSide = texSize / squaresPerSide;
+// Color depth.
+var tDepth = 4;
+
+
+// Create a checkerboard pattern using floats
+var image1 = new Uint8Array( tDepth * texSize * texSize );
+for( var i = 0; i < texSize; i++ )  {
+  for( var j = 0; j < texSize; j++ )  {
+    // Compute the Black/White color, switching every texelsPerSquareSide texels.
+    var bw = ( ( ( i & texelsPerSquareSide ) == 0 ) ^ ( ( j & texelsPerSquareSide )  == 0 ) );
+    for( var k = 0; k < tDepth-1; k++ )  {
+      image1[ ( tDepth * texSize * i ) + ( tDepth * j ) + k ] = ( 255 * bw );
+    }
+    // Set the alpha to 1.
+    image1[ ( tDepth * texSize * i ) + ( tDepth * j ) + k ] = ( 255 * 1.0 );
+  }
+}
+
+function configureRawDataTexture( image, width, height ) {
+    texture = gl.createTexture();
+    gl.bindTexture( gl.TEXTURE_2D, texture );
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+    gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0,
+         gl.RGBA, gl.UNSIGNED_BYTE, image );
+    gl.generateMipmap( gl.TEXTURE_2D );
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, 
+                      gl.NEAREST_MIPMAP_LINEAR );
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST );
+    
+    gl.uniform1i(gl.getUniformLocation(program, "texture"), texCounter);
+	texCounter++;
+}
+
+function configureImageTexture( image ) {
+    texture = gl.createTexture();
+    gl.bindTexture( gl.TEXTURE_2D, texture );
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+    gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGB, 
+         gl.RGB, gl.UNSIGNED_BYTE, image );
+    gl.generateMipmap( gl.TEXTURE_2D );
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, 
+                      gl.NEAREST_MIPMAP_LINEAR );
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST );
+    
+    gl.uniform1i(gl.getUniformLocation(program, "texture"), texCounter);
+	texCounter++;
+}
+
 /* ----------------------------------------------------------------------- */
 /* Function    : InitializePointList ( lSystemObj )
  *
@@ -77,33 +144,28 @@ ColorLookup.magenta = vec4(1.0, 1.0, 1.0, 1.0);
  * Parameters  : lSystemObj : LSystem
  */
 function InitializePointList () {
-	var lamp = new Lamp(vec3(5.0, 0.5 * LAMP_HEIGHT, 3), LAMP_HEIGHT, 0.3, ColorLookup.black, ColorLookup.black);
-	lamp.DumpToVertextArray(points, normals, colors);
-	
-	var trashBin1 = new Spirit3d();
-	trashBin1.SetTranslation(vec3(4.8, TRASHBIN_HEIGHT/2, 0));
-	trashBin1.mesh = new Cylinder(TRASHBIN_HEIGHT*0.3, TRASHBIN_HEIGHT*0.3, TRASHBIN_HEIGHT, 10, ColorLookup.black);
-	trashBin1.DumpToVertextArray(points, normals, colors);
-	
-	var trashBin2 = new Spirit3d();
-	trashBin2.SetTranslation(vec3(4.8, TRASHBIN_HEIGHT/2, 0 + TRASHBIN_HEIGHT*0.6));
-	trashBin2.mesh = new Cylinder(TRASHBIN_HEIGHT*0.3, TRASHBIN_HEIGHT*0.3, TRASHBIN_HEIGHT, 10, ColorLookup.green);
-	trashBin2.DumpToVertextArray(points, normals, colors);
-	
-	var building = new Spirit3d();
-	building.SetTranslation(vec3(0, 0, -48));
-	building.mesh = new Cube(80, 30, 30, vec4(1.0, 1.0, 0.9, 1.0));
-	building.DumpToVertextArray(points, normals, colors);
-	
 	ground = new Spirit3d();
 	ground.SetTranslation(vec3(0, 0, 0));
-	ground.mesh = new Cube(100, 0.1, 100, vec4(0.5, 0.5, 0.4, 1.0));
-	ground.DumpToVertextArray(points, normals, colors);
+	ground.mesh = new Quad(100, 100, vec4(0.5, 0.5, 0.4, 1.0));
+	ground.DumpToVertextArray(points, normals, colors, texCoords);
 	
-	ground.AddChildren(lamp);
-	ground.AddChildren(trashBin1);
-	ground.AddChildren(trashBin2);
-	ground.AddChildren(building);
+	var cube = new Spirit3d();
+	cube.SetTranslation(vec3(-30, 10.01, 0));
+	cube.mesh = new Cube(20, 20, 20, vec4(1.0, 1.0, 1.0, 1.0));
+	cube.DumpToVertextArray(points, normals, colors, texCoords);
+	ground.AddChildren(cube);
+	
+	var sphere = new Spirit3d();
+	sphere.SetTranslation(vec3(0, 10.01, 0));
+	sphere.mesh = new Sphere(10, 10, vec4(1.0, 1.0, 1.0, 1.0));
+	sphere.DumpToVertextArray(points, normals, colors, texCoords);
+	ground.AddChildren(sphere);
+	
+	var cylinder = new Spirit3d();
+	cylinder.SetTranslation(vec3(30, 10.01, 0));
+	cylinder.mesh = new Cylinder(10, 10, 20, 10, vec4(1.0, 1.0, 1.0, 1.0));
+	cylinder.DumpToVertextArray(points, normals, colors, texCoords);
+	ground.AddChildren(cylinder);
 }
 
 function InitializeGLShader() {
@@ -111,7 +173,7 @@ function InitializeGLShader() {
 	//
     //  Load shaders and initialize attribute buffers
     //
-    var program = initShaders( gl, "vertex-shader", "fragment-shader" );
+    program = initShaders( gl, "vertex-shader", "fragment-shader" );
     gl.useProgram( program );
     
     var cBuffer = gl.createBuffer();
@@ -130,7 +192,18 @@ function InitializeGLShader() {
     var vPosition = gl.getAttribLocation( program, "vPosition" );
     gl.vertexAttribPointer( vPosition, 4, gl.FLOAT, false, 0, 0 );
     gl.enableVertexAttribArray( vPosition );
+	
+	var tBuffer = gl.createBuffer();
+    gl.bindBuffer( gl.ARRAY_BUFFER, tBuffer );
+    gl.bufferData( gl.ARRAY_BUFFER, flatten(texCoords), gl.STATIC_DRAW );
+    
+    var vTexCoord = gl.getAttribLocation( program, "vTexCoord" );
+    gl.vertexAttribPointer( vTexCoord, 2, gl.FLOAT, false, 0, 0 );
+    gl.enableVertexAttribArray( vTexCoord );
 
+	var image = document.getElementById("texImage");
+	configureRawDataTexture(image1, texSize, texSize);
+	
 	thetaLoc = gl.getUniformLocation(program, "theta");
 	transLoc = gl.getUniformLocation(program, "trans");
 	modelViewLoc = gl.getUniformLocation( program, "modelView" );

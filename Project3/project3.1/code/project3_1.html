@@ -15,11 +15,8 @@ varying vec2 fTexCoord;
 uniform    vec3 theta;
 uniform    vec3 trans;
 
-uniform vec4 ambientProduct, diffuseProduct, specularProduct;
-uniform mat4 modelViewMatrix;
-uniform mat4 projectionMatrix;
-uniform vec4 lightPosition;
-uniform float shininess;
+uniform mat4 modelView;
+uniform mat4 projection;
 
 void main()
 {
@@ -76,6 +73,7 @@ void main()
 <script type="text/javascript" src="mesh/Cylinder.js"></script>
 <script type="text/javascript" src="mesh/Sphere.js"></script>
 <script type="text/javascript" src="mesh/Cube.js"></script>
+<script type="text/javascript" src="mesh/Quad.js"></script>
 <script type="text/javascript" src="model/Spirit3D.js"></script>
 <script type="text/javascript" src="project3_1.js"></script>
 </head>
@@ -84,6 +82,8 @@ void main()
 <canvas id="gl-canvas" width="512" height="512">
 Oops ... your browser doesn't support the HTML5 canvas element
 </canvas>
+
+<img id = "texImage" src = "SA2011_black.gif" hidden></img>
 <div id="output"></div>
 <!--
 <button id= "xButton">Rotate X</button>

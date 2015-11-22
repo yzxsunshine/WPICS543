@@ -50,13 +50,13 @@ Spirit3d.prototype.AddChildren = function (child) {
  *				 normals : normal buffer
  *				 colors : color buffer
  */
-Spirit3d.prototype.DumpToVertextArray = function (points, normals, colors) {
+Spirit3d.prototype.DumpToVertextArray = function (points, normals, colors, texCoords) {
 	if (this.mesh != 0) {
-		this.mesh.DumpToVertextArray(points, normals, colors, 0);
+		this.mesh.DumpToVertextArray(points, normals, colors, texCoords, 0);
 	}
 	
 	for (var i=0; i<this.children.length; i++) {
-		this.children[i].DumpToVertextArray(points, normals, colors);
+		this.children[i].DumpToVertextArray(points, normals, colors, texCoords);
 	}
 }
 

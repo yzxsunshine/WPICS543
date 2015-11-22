@@ -51,20 +51,61 @@ function Cube (xExtent, yExtent, zExtent, colorSet) {
 	this.vertices.push(vec3(xExtent/2, yExtent/2, -zExtent/2));
 	
 	this.indices.push(0, 1, 2);
+	this.texCoords.push(vec2(0, 0));
+	this.texCoords.push(vec2(0, 1));
+	this.texCoords.push(vec2(1, 1));
 	this.indices.push(0, 2, 3);
+	this.texCoords.push(vec2(0, 0));
+	this.texCoords.push(vec2(1, 1));
+	this.texCoords.push(vec2(1, 0));
+	
 	this.indices.push(4, 5, 6);
+	this.texCoords.push(vec2(0, 0));
+	this.texCoords.push(vec2(0, 1));
+	this.texCoords.push(vec2(1, 1));
 	this.indices.push(4, 6, 7);
+	this.texCoords.push(vec2(0, 0));
+	this.texCoords.push(vec2(1, 1));
+	this.texCoords.push(vec2(1, 0));
+	
 	this.indices.push(4, 5, 1);
+	this.texCoords.push(vec2(0, 0));
+	this.texCoords.push(vec2(0, 1));
+	this.texCoords.push(vec2(1, 1));
 	this.indices.push(4, 1, 0);
+	this.texCoords.push(vec2(0, 0));
+	this.texCoords.push(vec2(1, 1));
+	this.texCoords.push(vec2(1, 0));
+	
 	this.indices.push(6, 7, 3);
+	this.texCoords.push(vec2(0, 0));
+	this.texCoords.push(vec2(0, 1));
+	this.texCoords.push(vec2(1, 1));
 	this.indices.push(6, 3, 2);
+	this.texCoords.push(vec2(0, 0));
+	this.texCoords.push(vec2(1, 1));
+	this.texCoords.push(vec2(1, 0));
+	
 	this.indices.push(7, 4, 0);
+	this.texCoords.push(vec2(0, 0));
+	this.texCoords.push(vec2(0, 1));
+	this.texCoords.push(vec2(1, 1));
 	this.indices.push(7, 0, 3);
+	this.texCoords.push(vec2(0, 0));
+	this.texCoords.push(vec2(1, 1));
+	this.texCoords.push(vec2(1, 0));
+	
 	this.indices.push(5, 6, 2);
+	this.texCoords.push(vec2(0, 0));
+	this.texCoords.push(vec2(0, 1));
+	this.texCoords.push(vec2(1, 1));
 	this.indices.push(5, 2, 1);
+	this.texCoords.push(vec2(0, 0));
+	this.texCoords.push(vec2(1, 1));
+	this.texCoords.push(vec2(1, 0));
 	
 	this.faceColors = [];
-	for (var i = 0; i < indices.length / 3; i++) {
+	for (var i = 0; i < this.indices.length / 3; i++) {
 		if(colorMod == 0) {
 			color = colorSet;
 		}

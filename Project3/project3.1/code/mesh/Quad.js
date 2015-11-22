@@ -23,6 +23,7 @@ function Quad (width, height, colorSet) {
 	}
 	else if (colorSet.length == 0) {
 		colorSet = vec4(1, 1, 1, 1);
+		colorMod = 0;
 	}
 	
 	this.vertices.push(vec3(-width/2, 0, -height/2));
@@ -31,10 +32,16 @@ function Quad (width, height, colorSet) {
 	this.vertices.push(vec3(width/2, 0, -height/2));
 	
 	this.indices.push(0, 1, 2);
+	this.texCoords.push(vec2(0, 0));
+	this.texCoords.push(vec2(0, 1));
+	this.texCoords.push(vec2(1, 1));
 	this.indices.push(0, 2, 3);
+	this.texCoords.push(vec2(0, 0));
+	this.texCoords.push(vec2(1, 1));
+	this.texCoords.push(vec2(1, 0));
 	
 	this.faceColors = [];
-	for (var i = 0; i < indices.length / 3; i++) {
+	for (var i = 0; i < this.indices.length / 3; i++) {
 		if(colorMod == 0) {
 			color = colorSet;
 		}
@@ -43,5 +50,4 @@ function Quad (width, height, colorSet) {
 		}
 		this.faceColors.push(color);
 	}
-}
 }

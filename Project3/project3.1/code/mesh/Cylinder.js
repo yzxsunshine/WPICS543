@@ -27,7 +27,7 @@ Cylinder.prototype.constructor = Cylinder;
  *				 faceNormals : array of face normals
  */
  
-var CreateCircle = function (offset, numFacets, radius, vertices, indices, faceNormals) {
+var CreateCircle = function (offset, numFacets, radius, vertices, indices, texCoords, faceNormals) {
 	var deltaAngle = 2 * Math.PI / numFacets;
 	var startIndex = vertices.length;
 	vertices.push(vec3(offset[0], offset[1], offset[2]));
@@ -36,9 +36,18 @@ var CreateCircle = function (offset, numFacets, radius, vertices, indices, faceN
 		p[0] += Math.sin(deltaAngle * i) * radius;
 		p[2] += Math.cos(deltaAngle * i) * radius;
 		vertices.push(p);
+		
+		var xTex = (Math.sin(deltaAngle * i) + 1) * 0.5;
+		var yTex = (Math.cos(deltaAngle * i) + 1) * 0.5;
+		var xTex_1 = (Math.sin(deltaAngle * ((i + 1))) + 1) * 0.5;
+		var yTex_1 = (Math.cos(deltaAngle * ((i + 1))) + 1) * 0.5;
+			
 		indices.push(startIndex);
+		texCoords.push(vec2(0.5, 0.5));
 		indices.push(startIndex + 1 + i % numFacets);
+		texCoords.push(vec2(xTex, yTex));
 		indices.push(startIndex + 1 + (i + 1) % numFacets);
+		texCoords.push(vec2(xTex_1, yTex_1));
 		faceNormals.push(vec3(0, offset[1] / Math.abs(offset[1]), 0));
 	}
 }
@@ -73,9 +82,9 @@ function Cylinder (topRadius, bottomRadius, height, numFacets, colorSet) {
 	var topY = height / 2;
 	var bottomY = -height / 2;
 	var topCenterID = this.vertices.length;
-	CreateCircle(vec3(0, topY, 0), numFacets, topRadius, this.vertices, this.indices, this.faceNormals);
+	CreateCircle(vec3(0, topY, 0), numFacets, topRadius, this.vertices, this.indices, this.texCoords, this.faceNormals);
 	var bottomCenterID = this.vertices.length;
-	CreateCircle(vec3(0, bottomY, 0), numFacets, bottomRadius, this.vertices, this.indices, this.faceNormals);
+	CreateCircle(vec3(0, bottomY, 0), numFacets, bottomRadius, this.vertices, this.indices, this.texCoords, this.faceNormals);
 	
 	var colorMod = colorSet.length;
 	if (colorSet.length == 4) {	// possibly to be a single color
@@ -98,12 +107,22 @@ function Cylinder (topRadius, bottomRadius, height, numFacets, colorSet) {
 		this.faceNormals.push(normal.slice(0));
 		this.faceNormals.push(normal.slice(0));
 		
-		this.indices.push(i + topCenterID + 1);
-		this.indices.push((i + 1) % numFacets + bottomCenterID + 1);
-		this.indices.push(i + bottomCenterID + 1);
+		var xTex = i * 1.0 / numFacets;
+		var xTex_1 = (i + 1) * 1.0 / numFacets;
 		
 		this.indices.push(i + topCenterID + 1);
-		this.indices.push((i + 1) % numFacets + topCenterID + 1);
+		this.texCoords.push(vec2(xTex, 0));
+		this.indices.push(i + bottomCenterID + 1);
+		this.texCoords.push(vec2(xTex, 1));
 		this.indices.push((i + 1) % numFacets + bottomCenterID + 1);
+		this.texCoords.push(vec2(xTex_1, 1));
+		
+		this.indices.push(i + topCenterID + 1);
+		this.texCoords.push(vec2(xTex, 0));
+		this.indices.push((i + 1) % numFacets + bottomCenterID + 1);
+		this.texCoords.push(vec2(xTex_1, 1));
+		this.indices.push((i + 1) % numFacets + topCenterID + 1);
+		this.texCoords.push(vec2(xTex_1, 0));
+		
 	}
 }
