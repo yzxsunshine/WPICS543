@@ -5,6 +5,15 @@ function Spirit3d () {
 	this.mesh = 0;
 	this.localMatrix = [];
 	this.children = [];
+	this.program = 0;
+	this.modelViewLoc = 0;
+	this.projectionLoc = 0;
+}
+
+Spirit3d.prototype.SetShader = function (prog, mvLoc, projLoc) {
+	this.program = prog;
+	this.modelViewLoc = mvLoc;
+	this.projectionLoc  = projLoc;
 }
 
 Spirit3d.prototype.SetTransform = function (pos, angle, axis) {
@@ -52,7 +61,7 @@ Spirit3d.prototype.AddChildren = function (child) {
  */
 Spirit3d.prototype.DumpToVertextArray = function (points, normals, colors, texCoords) {
 	if (this.mesh != 0) {
-		this.mesh.DumpToVertextArray(points, normals, colors, texCoords, 0);
+		this.mesh.DumpToVertextArray(points, normals, colors, texCoords);
 	}
 	
 	for (var i=0; i<this.children.length; i++) {
@@ -60,14 +69,16 @@ Spirit3d.prototype.DumpToVertextArray = function (points, normals, colors, texCo
 	}
 }
 
-Spirit3d.prototype.Render = function  (mvMatrix, mvMatrixLoc)  {
+Spirit3d.prototype.Render = function  (mvMatrix, projection)  {
 	var tmpMatrix = mult(mvMatrix, this.localMatrix);
 	if (this.mesh != 0) {
-		gl.uniformMatrix4fv( modelViewLoc, false, flatten( tmpMatrix ) );
+		gl.useProgram( this.program );
+		gl.uniformMatrix4fv( this.modelViewLoc, false, flatten( tmpMatrix ) );
+		gl.uniformMatrix4fv( this.projectionLoc, false, flatten( projection ) );
 		gl.drawArrays( gl.TRIANGLES, this.mesh.startIndex, this.mesh.vertexNum );
 	}
 	
 	for (var i=0; i<this.children.length; i++) {
-		this.children[i].Render(tmpMatrix, mvMatrixLoc);
+		this.children[i].Render(tmpMatrix, projection);
 	}
 }

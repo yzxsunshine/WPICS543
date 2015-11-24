@@ -13,7 +13,6 @@
  
 /* -- GLOBAL VARIABLES --------------------------------------------------- */
 var gl;
-var program;
 
 var points = [];
 var colors = [];
@@ -22,7 +21,7 @@ var texCoords = [];
 
 var textureGround;
 var texCounter = 0;
-
+var textures = [];
 var texCoord = [
     vec2(0, 0),
     vec2(0, 1),
@@ -111,7 +110,7 @@ for( var i = 0; i < texSize; i++ )  {
   }
 }
 
-function configureRawDataTexture( image, width, height ) {
+function configureRawDataTexture( program, image, width, height ) {
     texture = gl.createTexture();
     gl.bindTexture( gl.TEXTURE_2D, texture );
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
@@ -122,11 +121,12 @@ function configureRawDataTexture( image, width, height ) {
                       gl.NEAREST_MIPMAP_LINEAR );
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST );
     
-    gl.uniform1i(gl.getUniformLocation(program, "texture"), texCounter);
-	texCounter++;
+    gl.uniform1i(gl.getUniformLocation(program, "texture"), 0);
+	textures.push(texture);
+	//texCounter++;
 }
 
-function configureImageTexture( image ) {
+function configureImageTexture( program, image ) {
     texture = gl.createTexture();
     gl.bindTexture( gl.TEXTURE_2D, texture );
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
@@ -137,51 +137,13 @@ function configureImageTexture( image ) {
                       gl.NEAREST_MIPMAP_LINEAR );
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST );
     
-    gl.uniform1i(gl.getUniformLocation(program, "texture"), texCounter);
-	texCounter++;
+    gl.uniform1i(gl.getUniformLocation(program, "texture"), 0);
+	//texCounter++;
+	textures.push(texture);
 }
 
-/* ----------------------------------------------------------------------- */
-/* Function    : InitializePointList ( lSystemObj )
- *
- * Description : add points to vertex buffer according to lsystem rules.
- *
- * Parameters  : lSystemObj : LSystem
- */
-function InitializePointList () {
-	ground = new Spirit3d();
-	ground.SetTranslation(vec3(0, 0, 0));
-	ground.mesh = new Quad(100, 100, vec4(0.5, 0.5, 0.4, 1.0));
-	ground.DumpToVertextArray(points, normals, colors, texCoords);
-	
-	var cube = new Spirit3d();
-	cube.SetTranslation(vec3(-30, 10.01, 0));
-	cube.mesh = new Cube(20, 20, 20, vec4(1.0, 1.0, 1.0, 1.0));
-	cube.DumpToVertextArray(points, normals, colors, texCoords);
-	ground.AddChildren(cube);
-	
-	var sphere = new Spirit3d();
-	sphere.SetTranslation(vec3(0, 10.01, 0));
-	sphere.mesh = new Sphere(10, 10, vec4(1.0, 1.0, 1.0, 1.0));
-	sphere.DumpToVertextArray(points, normals, colors, texCoords);
-	ground.AddChildren(sphere);
-	
-	var cylinder = new Spirit3d();
-	cylinder.SetTranslation(vec3(30, 10.01, 0));
-	cylinder.mesh = new Cylinder(10, 10, 20, 10, vec4(1.0, 1.0, 1.0, 1.0));
-	cylinder.DumpToVertextArray(points, normals, colors, texCoords);
-	ground.AddChildren(cylinder);
-}
-
-function InitializeGLShader() {
-	
-	//
-    //  Load shaders and initialize attribute buffers
-    //
-    program = initShaders( gl, "vertex-shader", "fragment-shader" );
-    gl.useProgram( program );
-    
-    var cBuffer = gl.createBuffer();
+function BindShaderData (program) {
+	var cBuffer = gl.createBuffer();
     gl.bindBuffer( gl.ARRAY_BUFFER, cBuffer );
     gl.bufferData( gl.ARRAY_BUFFER, flatten(colors), gl.STATIC_DRAW );
 
@@ -205,15 +167,72 @@ function InitializeGLShader() {
     var vTexCoord = gl.getAttribLocation( program, "vTexCoord" );
     gl.vertexAttribPointer( vTexCoord, 2, gl.FLOAT, false, 0, 0 );
     gl.enableVertexAttribArray( vTexCoord );
-
-	var image = document.getElementById("texImage");
-	configureRawDataTexture(image1, texSize, texSize);
+}
+function InitializeGLShader() {
 	
-	thetaLoc = gl.getUniformLocation(program, "theta");
-	transLoc = gl.getUniformLocation(program, "trans");
-	modelViewLoc = gl.getUniformLocation( program, "modelView" );
-    projectionLoc = gl.getUniformLocation( program, "projection" );
+	//
+    //  Load shaders and initialize attribute buffers
+    //
+    var programGround = initShaders( gl, "vertex-shader-ground", "fragment-shader-ground" );
+    gl.useProgram( programGround );
+    var modelViewLocGround = gl.getUniformLocation( programGround, "modelView" );
+    var projectionLocGround = gl.getUniformLocation( programGround, "projection" );
+	ground = new Spirit3d();
+	ground.SetTranslation(vec3(0, 0, 0));
+	ground.mesh = new Quad(100, 100, vec4(0.5, 0.5, 0.4, 1.0));
+	ground.DumpToVertextArray(points, normals, colors, texCoords);
+	ground.SetShader(programGround, modelViewLocGround, projectionLocGround);
 
+	var programCube= initShaders( gl, "vertex-shader-envmap", "fragment-shader-envmap" );
+    gl.useProgram( programCube );
+    var modelViewLocCube = gl.getUniformLocation( programCube, "modelView" );
+    var projectionLocCube = gl.getUniformLocation( programCube, "projection" );
+	var cube = new Spirit3d();
+	cube.SetTranslation(vec3(-30, 10.01, 0));
+	cube.mesh = new Cube(20, 20, 20, vec4(1.0, 1.0, 1.0, 1.0));
+	cube.DumpToVertextArray(points, normals, colors, texCoords);
+	cube.SetShader(programCube, modelViewLocCube, projectionLocCube);
+	ground.AddChildren(cube);
+	
+	var programSphere= initShaders( gl, "vertex-shader-bumpmap", "fragment-shader-bumpmap" );
+    gl.useProgram( programSphere );
+    var modelViewLocSphere = gl.getUniformLocation( programSphere, "modelView" );
+    var projectionLocSphere = gl.getUniformLocation( programSphere, "projection" );
+	var sphere = new Spirit3d();
+	sphere.SetTranslation(vec3(0, 10.01, 0));
+	sphere.mesh = new Sphere(10, 10, vec4(1.0, 1.0, 1.0, 1.0));
+	sphere.DumpToVertextArray(points, normals, colors, texCoords);
+	sphere.SetShader(programSphere, modelViewLocSphere, projectionLocSphere);
+	ground.AddChildren(sphere);
+	
+	var programCylinder= initShaders( gl, "vertex-shader-parallelmap", "fragment-shader-parallelmap" );
+    gl.useProgram( programCylinder );
+    var modelViewLocCylinder = gl.getUniformLocation( programCylinder, "modelView" );
+    var projectionLocCylinder = gl.getUniformLocation( programCylinder, "projection" );
+	var cylinder = new Spirit3d();
+	cylinder.SetTranslation(vec3(30, 10.01, 0));
+	cylinder.mesh = new Cylinder(10, 10, 20, 10, vec4(1.0, 1.0, 1.0, 1.0));
+	cylinder.DumpToVertextArray(points, normals, colors, texCoords);
+	cylinder.SetShader(programCylinder, modelViewLocCylinder, projectionLocCylinder);
+	ground.AddChildren(cylinder);
+	
+	gl.useProgram( programGround );
+	BindShaderData(programGround);
+	configureRawDataTexture(programGround, image1, texSize, texSize);
+	
+	gl.useProgram( programCube );
+	BindShaderData(programCube);
+	configureRawDataTexture(programCube, image1, texSize, texSize);
+	
+	gl.useProgram( programSphere );
+	BindShaderData(programSphere);
+	configureRawDataTexture(programSphere, image1, texSize, texSize);
+	
+	gl.useProgram( programCylinder );
+	BindShaderData(programCylinder);
+	configureRawDataTexture(programCylinder, image1, texSize, texSize);
+	
+	
     //event listeners for buttons
 
    /* document.getElementById( "xButton" ).onclick = function ( ) {
@@ -409,27 +428,17 @@ window.onload = function init()
     gl.enable(gl.DEPTH_TEST);
 	
 	ResetCamera();
-	InitializePointList();
 	InitializeGLShader();
 };
 
 
 function render() {
-    gl.clear( gl.COLOR_BUFFER_BIT );
-    //eye = vec3( radius * Math.sin( camTheta ) * Math.cos( camPhi ),
-    //            radius * Math.sin( camTheta ) * Math.sin( camPhi ),
-    //            radius * Math.cos( camTheta ) );
-    mvMatrix = lookAt( eye, at , up );
-    //var transMat = translate( 0.0, 0.0, 0.0 );
-    //mvMatrix = mult( mvMatrix, transMat );
-    pMatrix = perspective( fovy, aspect, near, far );
-	gl.uniformMatrix4fv( modelViewLoc, false, flatten( mvMatrix ) );
-	gl.uniformMatrix4fv( projectionLoc, false, flatten( pMatrix ) );
+    gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 	
-	//lamp.Render(mvMatrix, modelViewLoc);
-	//for (var i = 0; i < trashBins.length; i++) {
-		//trashBins[i].Render(mvMatrix, modelViewLoc);
-	//}
-	ground.Render(mvMatrix, modelViewLoc);
+    mvMatrix = lookAt( eye, at , up );
+  
+    pMatrix = perspective( fovy, aspect, near, far );
+
+	ground.Render(mvMatrix, pMatrix);
 	requestAnimFrame( render );
 }

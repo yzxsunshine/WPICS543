@@ -76,10 +76,10 @@ Mesh.prototype.ComputeVertexNormal = function () {
  *				 colorBuffer : color buffer
  *				 shareVertex : use vertex normal or face normal
  */
-Mesh.prototype.DumpToVertextArray = function (vertexBuffer, normalBuffer, colorBuffer, texCoordBuffer, shareVertex) {
+Mesh.prototype.DumpToVertextArray = function (vertexBuffer, normalBuffer, colorBuffer, texCoordBuffer) {
 	this.startIndex = vertexBuffer.length;
 	this.vertexNum = this.indices.length;
-	if (shareVertex == 0 || this.faceColors.length > 0) {	// not sharing
+	if (this.normals.length == 0 || this.faceColors.length > 0) {	// not sharing
 		if (this.faceNormals.length == 0)
 			this.ComputeFaceNormal();
 		for (var i = 0; i < this.faceNormals.length; i++) {
