@@ -96,6 +96,40 @@ var tDepth = 4;
 var shiftPressed = 0;
 var ctrlPressed = 0;
 
+// bump map
+var tangent = vec3(1.0, 0.0, 0.0);
+var lightPosition = vec4(0.0, 2.0, 0.0, 1.0 );
+var lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
+var materialDiffuse = vec4( 0.7, 0.7, 0.7, 1.0 );
+
+function mat4ToInverseMat3(mat) {
+    dest = mat3();
+	var a00 = mat[0][0], a01 = mat[0][1], a02 = mat[0][2];
+	var a10 = mat[1][0], a11 = mat[1][1], a12 = mat[1][2];
+	var a20 = mat[2][0], a21 = mat[2][1], a22 = mat[2][2];
+	
+	var b01 = a22*a11-a12*a21;
+	var b11 = -a22*a10+a12*a20;
+	var b21 = a21*a10-a11*a20;
+		
+	var d = a00*b01 + a01*b11 + a02*b21;
+	if (!d) { return null; }
+	var id = 1/d;
+	
+	
+	dest[0][0] = b01*id;
+	dest[0][1] = (-a22*a01 + a02*a21)*id;
+	dest[0][2] = (a12*a01 - a02*a11)*id;
+	dest[1][0] = b11*id;
+	dest[1][1] = (a22*a00 - a02*a20)*id;
+	dest[1][2] = (-a12*a00 + a02*a10)*id;
+	dest[2][0] = b21*id;
+	dest[2[1]] = (-a21*a00 + a01*a20)*id;
+	dest[2][2] = (a11*a00 - a01*a10)*id;
+	
+	return dest;
+};
+
 // Create a checkerboard pattern using floats
 var image1 = new Uint8Array( tDepth * texSize * texSize );
 for( var i = 0; i < texSize; i++ )  {
@@ -110,7 +144,7 @@ for( var i = 0; i < texSize; i++ )  {
   }
 }
 
-function configureRawDataTexture( program, image, width, height ) {
+function configureRawDataTexture( program, image, width, height, texName) {
     texture = gl.createTexture();
     gl.bindTexture( gl.TEXTURE_2D, texture );
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
@@ -121,12 +155,12 @@ function configureRawDataTexture( program, image, width, height ) {
                       gl.NEAREST_MIPMAP_LINEAR );
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST );
     
-    gl.uniform1i(gl.getUniformLocation(program, "texture"), 0);
+    gl.uniform1i(gl.getUniformLocation(program, texName), 0);
 	textures.push(texture);
 	//texCounter++;
 }
 
-function configureImageTexture( program, image ) {
+function configureImageTexture( program, image, texName) {
     texture = gl.createTexture();
     gl.bindTexture( gl.TEXTURE_2D, texture );
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
@@ -137,37 +171,65 @@ function configureImageTexture( program, image ) {
                       gl.NEAREST_MIPMAP_LINEAR );
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST );
     
-    gl.uniform1i(gl.getUniformLocation(program, "texture"), 0);
+    gl.uniform1i(gl.getUniformLocation(program, texName), 0);
 	//texCounter++;
 	textures.push(texture);
 }
 
 function BindShaderData (program) {
-	var cBuffer = gl.createBuffer();
-    gl.bindBuffer( gl.ARRAY_BUFFER, cBuffer );
-    gl.bufferData( gl.ARRAY_BUFFER, flatten(colors), gl.STATIC_DRAW );
-
     var vColor = gl.getAttribLocation( program, "vColor" );
-    gl.vertexAttribPointer( vColor, 4, gl.FLOAT, false, 0, 0 );
-    gl.enableVertexAttribArray( vColor );
-
-    var vBuffer = gl.createBuffer();
-    gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer);
-    gl.bufferData( gl.ARRAY_BUFFER, flatten(points), gl.STATIC_DRAW );
+	if (vColor >= 0) {
+		var cBuffer = gl.createBuffer();
+		gl.bindBuffer( gl.ARRAY_BUFFER, cBuffer );
+		gl.bufferData( gl.ARRAY_BUFFER, flatten(colors), gl.STATIC_DRAW );
+		gl.vertexAttribPointer( vColor, 4, gl.FLOAT, false, 0, 0 );
+		gl.enableVertexAttribArray( vColor );
+	}
     
-
     var vPosition = gl.getAttribLocation( program, "vPosition" );
-    gl.vertexAttribPointer( vPosition, 4, gl.FLOAT, false, 0, 0 );
-    gl.enableVertexAttribArray( vPosition );
-	
-	var tBuffer = gl.createBuffer();
-    gl.bindBuffer( gl.ARRAY_BUFFER, tBuffer );
-    gl.bufferData( gl.ARRAY_BUFFER, flatten(texCoords), gl.STATIC_DRAW );
-    
+	if (vPosition >= 0) {
+		var vBuffer = gl.createBuffer();
+		gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer);
+		gl.bufferData( gl.ARRAY_BUFFER, flatten(points), gl.STATIC_DRAW );
+		gl.vertexAttribPointer( vPosition, 4, gl.FLOAT, false, 0, 0 );
+		gl.enableVertexAttribArray( vPosition );
+	}
+   
+
+    var vNormal = gl.getAttribLocation( program, "vNormal" );
+	if (vNormal >= 0) {
+		var nBuffer = gl.createBuffer();
+		gl.bindBuffer( gl.ARRAY_BUFFER, nBuffer );
+		gl.bufferData( gl.ARRAY_BUFFER, flatten(normals), gl.STATIC_DRAW );
+		gl.vertexAttribPointer( vNormal, 4, gl.FLOAT, false, 0, 0 );
+		gl.enableVertexAttribArray( vNormal );
+	}
+   
     var vTexCoord = gl.getAttribLocation( program, "vTexCoord" );
-    gl.vertexAttribPointer( vTexCoord, 2, gl.FLOAT, false, 0, 0 );
-    gl.enableVertexAttribArray( vTexCoord );
+	if (vTexCoord >= 0) {
+		var tBuffer = gl.createBuffer();
+		gl.bindBuffer( gl.ARRAY_BUFFER, tBuffer );
+		gl.bufferData( gl.ARRAY_BUFFER, flatten(texCoords), gl.STATIC_DRAW );
+	    gl.vertexAttribPointer( vTexCoord, 2, gl.FLOAT, false, 0, 0 );
+		gl.enableVertexAttribArray( vTexCoord );
+	}
 }
+
+function BumpMapShaderScript (program, mvMatrix, mvMatrixLoc, projMatrix, projMatrixLoc) {
+	gl.useProgram( program );
+	gl.uniformMatrix4fv( mvMatrixLoc, false, flatten( mvMatrix ) );
+	gl.uniformMatrix4fv( projMatrixLoc, false, flatten( projMatrix ) );
+	
+	var normalMatrix = mat4ToInverseMat3(mvMatrix);
+    gl.uniformMatrix3fv( gl.getUniformLocation(program, "normalMatrix"), false, flatten(normalMatrix));
+}
+
+function GroundShaderScript (program, mvMatrix, mvMatrixLoc, projMatrix, projMatrixLoc) {
+	gl.useProgram( program );
+	gl.uniformMatrix4fv( mvMatrixLoc, false, flatten( mvMatrix ) );
+	gl.uniformMatrix4fv( projMatrixLoc, false, flatten( projMatrix ) );
+}
+
 function InitializeGLShader() {
 	
 	//
@@ -181,7 +243,7 @@ function InitializeGLShader() {
 	ground.SetTranslation(vec3(0, 0, 0));
 	ground.mesh = new Quad(100, 100, vec4(0.5, 0.5, 0.4, 1.0));
 	ground.DumpToVertextArray(points, normals, colors, texCoords);
-	ground.SetShader(programGround, modelViewLocGround, projectionLocGround);
+	ground.SetShader(programGround, modelViewLocGround, projectionLocGround, GroundShaderScript);
 
 	var programCube= initShaders( gl, "vertex-shader-envmap", "fragment-shader-envmap" );
     gl.useProgram( programCube );
@@ -191,7 +253,7 @@ function InitializeGLShader() {
 	cube.SetTranslation(vec3(-30, 10.01, 0));
 	cube.mesh = new Cube(20, 20, 20, vec4(1.0, 1.0, 1.0, 1.0));
 	cube.DumpToVertextArray(points, normals, colors, texCoords);
-	cube.SetShader(programCube, modelViewLocCube, projectionLocCube);
+	cube.SetShader(programCube, modelViewLocCube, projectionLocCube, GroundShaderScript);
 	ground.AddChildren(cube);
 	
 	var programSphere= initShaders( gl, "vertex-shader-bumpmap", "fragment-shader-bumpmap" );
@@ -202,7 +264,7 @@ function InitializeGLShader() {
 	sphere.SetTranslation(vec3(0, 10.01, 0));
 	sphere.mesh = new Sphere(10, 10, vec4(1.0, 1.0, 1.0, 1.0));
 	sphere.DumpToVertextArray(points, normals, colors, texCoords);
-	sphere.SetShader(programSphere, modelViewLocSphere, projectionLocSphere);
+	sphere.SetShader(programSphere, modelViewLocSphere, projectionLocSphere, BumpMapShaderScript);
 	ground.AddChildren(sphere);
 	
 	var programCylinder= initShaders( gl, "vertex-shader-parallelmap", "fragment-shader-parallelmap" );
@@ -213,24 +275,31 @@ function InitializeGLShader() {
 	cylinder.SetTranslation(vec3(30, 10.01, 0));
 	cylinder.mesh = new Cylinder(10, 10, 20, 10, vec4(1.0, 1.0, 1.0, 1.0));
 	cylinder.DumpToVertextArray(points, normals, colors, texCoords);
-	cylinder.SetShader(programCylinder, modelViewLocCylinder, projectionLocCylinder);
+	cylinder.SetShader(programCylinder, modelViewLocCylinder, projectionLocCylinder, GroundShaderScript);
 	ground.AddChildren(cylinder);
 	
 	gl.useProgram( programGround );
 	BindShaderData(programGround);
-	configureRawDataTexture(programGround, image1, texSize, texSize);
+	configureRawDataTexture(programGround, image1, texSize, texSize, "texture");
 	
 	gl.useProgram( programCube );
 	BindShaderData(programCube);
-	configureRawDataTexture(programCube, image1, texSize, texSize);
+	configureRawDataTexture(programCube, image1, texSize, texSize, "texture");
 	
 	gl.useProgram( programSphere );
 	BindShaderData(programSphere);
-	configureRawDataTexture(programSphere, image1, texSize, texSize);
+	var diffuseProduct = mult(lightDiffuse, materialDiffuse);
+    gl.uniform4fv( gl.getUniformLocation(programSphere, "diffuseProduct"),flatten(diffuseProduct));	
+    gl.uniform4fv( gl.getUniformLocation(programSphere, "lightPosition"),flatten(lightPosition));
+    gl.uniform3fv( gl.getUniformLocation(programSphere, "objTangent"),flatten(tangent));
+	var bumpMapImg = document.getElementById("bumpMapImg");
+	var bumpMapNormal = document.getElementById("bumpMapNormal");
+	configureImageTexture(programSphere, bumpMapImg, "texture");
+	configureImageTexture(programSphere, bumpMapNormal, "bumpMap");
 	
 	gl.useProgram( programCylinder );
 	BindShaderData(programCylinder);
-	configureRawDataTexture(programCylinder, image1, texSize, texSize);
+	configureRawDataTexture(programCylinder, image1, texSize, texSize, "texture");
 	
 	
     //event listeners for buttons

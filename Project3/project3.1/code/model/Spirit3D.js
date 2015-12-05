@@ -8,12 +8,14 @@ function Spirit3d () {
 	this.program = 0;
 	this.modelViewLoc = 0;
 	this.projectionLoc = 0;
+	this.shaderScript = 0;
 }
 
-Spirit3d.prototype.SetShader = function (prog, mvLoc, projLoc) {
+Spirit3d.prototype.SetShader = function (prog, mvLoc, projLoc, script) {
 	this.program = prog;
 	this.modelViewLoc = mvLoc;
 	this.projectionLoc  = projLoc;
+	this.shaderScript = script;
 }
 
 Spirit3d.prototype.SetTransform = function (pos, angle, axis) {
@@ -72,9 +74,9 @@ Spirit3d.prototype.DumpToVertextArray = function (points, normals, colors, texCo
 Spirit3d.prototype.Render = function  (mvMatrix, projection)  {
 	var tmpMatrix = mult(mvMatrix, this.localMatrix);
 	if (this.mesh != 0) {
-		gl.useProgram( this.program );
-		gl.uniformMatrix4fv( this.modelViewLoc, false, flatten( tmpMatrix ) );
-		gl.uniformMatrix4fv( this.projectionLoc, false, flatten( projection ) );
+		if (this.shaderScript != 0) {
+			this.shaderScript(this.program, tmpMatrix, this.modelViewLoc, projection, this.projectionLoc);
+		}
 		gl.drawArrays( gl.TRIANGLES, this.mesh.startIndex, this.mesh.vertexNum );
 	}
 	
