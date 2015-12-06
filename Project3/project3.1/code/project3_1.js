@@ -144,7 +144,26 @@ for( var i = 0; i < texSize; i++ )  {
   }
 }
 
-function configureRawDataTexture( program, image, width, height, texName) {
+function isPowerOf2(value) {
+  return (value & (value - 1)) == 0;
+}
+
+function steupTextureFilteringAndMips(width, height) {
+  if (isPowerOf2(width) && isPowerOf2(height)) {
+    // the dimensions are power of 2 so generate mips and turn on 
+    // tri-linear filtering.
+    gl.generateMipmap(gl.TEXTURE_2D);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+  } else {
+    // at least one of the dimensions is not a power of 2 so set the filtering
+    // so WebGL will render it.
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  }
+}
+
+function configureRawDataTexture( program, image, width, height, texName, id) {
     texture = gl.createTexture();
     gl.bindTexture( gl.TEXTURE_2D, texture );
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
@@ -155,33 +174,50 @@ function configureRawDataTexture( program, image, width, height, texName) {
                       gl.NEAREST_MIPMAP_LINEAR );
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST );
     
-    gl.uniform1i(gl.getUniformLocation(program, texName), 0);
+    gl.uniform1i(gl.getUniformLocation(program, texName), id);
 	textures.push(texture);
+	return texture;
 	//texCounter++;
 }
 
-function configureImageTexture( program, image, texName) {
-    texture = gl.createTexture();
-    gl.bindTexture( gl.TEXTURE_2D, texture );
+function configureImageTexture( program, image, texName, id) {
+    var tex = gl.createTexture();
+    gl.bindTexture( gl.TEXTURE_2D, tex );
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
     gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGB, 
          gl.RGB, gl.UNSIGNED_BYTE, image );
-    gl.generateMipmap( gl.TEXTURE_2D );
-    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, 
-                      gl.NEAREST_MIPMAP_LINEAR );
-    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST );
+    //gl.generateMipmap( gl.TEXTURE_2D );
+    steupTextureFilteringAndMips(image.width, image.height);
     
-    gl.uniform1i(gl.getUniformLocation(program, texName), 0);
+    gl.uniform1i(gl.getUniformLocation(program, texName), id);
 	//texCounter++;
-	textures.push(texture);
+	textures.push(tex);
+	return tex;
 }
 
-function BindShaderData (program) {
+function configureCubeMap (img) {
+	var texID = gl.createTexture();
+	gl.bindTexture(gl.TEXTURE_CUBE_MAP, texID);
+	var targets = [
+	   gl.TEXTURE_CUBE_MAP_POSITIVE_X, gl.TEXTURE_CUBE_MAP_NEGATIVE_X, 
+	   gl.TEXTURE_CUBE_MAP_POSITIVE_Y, gl.TEXTURE_CUBE_MAP_NEGATIVE_Y, 
+	   gl.TEXTURE_CUBE_MAP_POSITIVE_Z, gl.TEXTURE_CUBE_MAP_NEGATIVE_Z 
+	];
+	for (var j = 0; j < 6; j++) {
+		gl.texImage2D(targets[j], 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, img[j]);
+		gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+		gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+	}
+	gl.generateMipmap(gl.TEXTURE_CUBE_MAP);
+	return texID;
+}
+
+function BindShaderData (program, pts, norms, cols, texs) {
     var vColor = gl.getAttribLocation( program, "vColor" );
 	if (vColor >= 0) {
 		var cBuffer = gl.createBuffer();
 		gl.bindBuffer( gl.ARRAY_BUFFER, cBuffer );
-		gl.bufferData( gl.ARRAY_BUFFER, flatten(colors), gl.STATIC_DRAW );
+		gl.bufferData( gl.ARRAY_BUFFER, flatten(cols), gl.STATIC_DRAW );
 		gl.vertexAttribPointer( vColor, 4, gl.FLOAT, false, 0, 0 );
 		gl.enableVertexAttribArray( vColor );
 	}
@@ -190,7 +226,7 @@ function BindShaderData (program) {
 	if (vPosition >= 0) {
 		var vBuffer = gl.createBuffer();
 		gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer);
-		gl.bufferData( gl.ARRAY_BUFFER, flatten(points), gl.STATIC_DRAW );
+		gl.bufferData( gl.ARRAY_BUFFER, flatten(pts), gl.STATIC_DRAW );
 		gl.vertexAttribPointer( vPosition, 4, gl.FLOAT, false, 0, 0 );
 		gl.enableVertexAttribArray( vPosition );
 	}
@@ -200,7 +236,7 @@ function BindShaderData (program) {
 	if (vNormal >= 0) {
 		var nBuffer = gl.createBuffer();
 		gl.bindBuffer( gl.ARRAY_BUFFER, nBuffer );
-		gl.bufferData( gl.ARRAY_BUFFER, flatten(normals), gl.STATIC_DRAW );
+		gl.bufferData( gl.ARRAY_BUFFER, flatten(norms), gl.STATIC_DRAW );
 		gl.vertexAttribPointer( vNormal, 4, gl.FLOAT, false, 0, 0 );
 		gl.enableVertexAttribArray( vNormal );
 	}
@@ -209,25 +245,51 @@ function BindShaderData (program) {
 	if (vTexCoord >= 0) {
 		var tBuffer = gl.createBuffer();
 		gl.bindBuffer( gl.ARRAY_BUFFER, tBuffer );
-		gl.bufferData( gl.ARRAY_BUFFER, flatten(texCoords), gl.STATIC_DRAW );
+		gl.bufferData( gl.ARRAY_BUFFER, flatten(texs), gl.STATIC_DRAW );
 	    gl.vertexAttribPointer( vTexCoord, 2, gl.FLOAT, false, 0, 0 );
 		gl.enableVertexAttribArray( vTexCoord );
 	}
 }
 
-function BumpMapShaderScript (program, mvMatrix, mvMatrixLoc, projMatrix, projMatrixLoc) {
-	gl.useProgram( program );
-	gl.uniformMatrix4fv( mvMatrixLoc, false, flatten( mvMatrix ) );
-	gl.uniformMatrix4fv( projMatrixLoc, false, flatten( projMatrix ) );
-	
-	var normalMatrix = mat4ToInverseMat3(mvMatrix);
-    gl.uniformMatrix3fv( gl.getUniformLocation(program, "normalMatrix"), false, flatten(normalMatrix));
+function initLights(shader){
+    gl.uniform3fv(shader.uLightDirection,   [0.0, -1.0, 1.0]);
+    gl.uniform4fv(shader.uLightAmbient, [0.1,0.1,0.1,1.0]);
+    gl.uniform4fv(shader.uLightDiffuse,  [1.0,1.0,1.0,1.0]); 
+    gl.uniform4fv(shader.uLightSpecular,  [1.0,1.0,1.0,1.0]);
+    gl.uniform4fv(shader.uMaterialAmbient, [1.0,1.0,1.0,1.0]); 
+    gl.uniform4fv(shader.uMaterialDiffuse, [1.0,1.0,1.0,1.0]);
+    gl.uniform4fv(shader.uMaterialSpecular,[1.0,1.0,1.0,1.0]);
+    gl.uniform1f(shader.uShininess, 230.0);
 }
 
-function GroundShaderScript (program, mvMatrix, mvMatrixLoc, projMatrix, projMatrixLoc) {
-	gl.useProgram( program );
-	gl.uniformMatrix4fv( mvMatrixLoc, false, flatten( mvMatrix ) );
-	gl.uniformMatrix4fv( projMatrixLoc, false, flatten( projMatrix ) );
+function BumpMapShaderScript (shader, mvMatrix, projMatrix, pts, norms, cols, texs) {
+	gl.useProgram( shader.program );
+	BindShaderData(shader.program, pts, norms, cols, texs);
+	gl.uniformMatrix4fv( shader.uMVMatrix, false, flatten( mvMatrix ) );
+	gl.uniformMatrix4fv( shader.uProjMatrix, false, flatten( projMatrix ) );
+	var normalMatrix = mat4ToInverseMat3(mvMatrix);
+    gl.uniformMatrix3fv( shader.uNormalMatrix, false, flatten(normalMatrix));
+	initLights(shader);
+}
+
+function EnvMapShaderScript (shader, mvMatrix, projMatrix, pts, norms, cols, texs) {
+	gl.useProgram( shader.program );
+	BindShaderData(shader.program, pts, norms, cols, texs);
+	gl.uniformMatrix4fv( shader.uMVMatrix, false, flatten( mvMatrix ) );
+	gl.uniformMatrix4fv( shader.uProjMatrix, false, flatten( projMatrix ) );
+	var normalMatrix = mat4ToInverseMat3(mvMatrix);
+    gl.uniformMatrix3fv( shader.uNormalMatrix, false, flatten(normalMatrix));
+	//initLights(shader);
+}
+
+function GroundShaderScript (shader, mvMatrix, projMatrix, pts, norms, cols, texs) {
+	gl.useProgram( shader.program );
+	BindShaderData(shader.program, pts, norms, cols, texs);
+	gl.uniformMatrix4fv( shader.uMVMatrix, false, flatten( mvMatrix ) );
+	gl.uniformMatrix4fv( shader.uProjMatrix, false, flatten( projMatrix ) );
+	var normalMatrix = mat4ToInverseMat3(mvMatrix);
+    gl.uniformMatrix3fv( shader.uNormalMatrix, false, flatten(normalMatrix));
+	initLights(shader);
 }
 
 function InitializeGLShader() {
@@ -243,9 +305,9 @@ function InitializeGLShader() {
 	ground.SetTranslation(vec3(0, 0, 0));
 	ground.mesh = new Quad(100, 100, vec4(0.5, 0.5, 0.4, 1.0));
 	ground.DumpToVertextArray(points, normals, colors, texCoords);
-	ground.SetShader(programGround, modelViewLocGround, projectionLocGround, GroundShaderScript);
+	ground.SetShader(gl, programGround, modelViewLocGround, projectionLocGround, points, normals, colors, texCoords, GroundShaderScript);
 
-	var programCube= initShaders( gl, "vertex-shader-envmap", "fragment-shader-envmap" );
+	var programCube= initShaders( gl, "vertex-shader-bumpmap", "fragment-shader-bumpmap" );
     gl.useProgram( programCube );
     var modelViewLocCube = gl.getUniformLocation( programCube, "modelView" );
     var projectionLocCube = gl.getUniformLocation( programCube, "projection" );
@@ -253,10 +315,10 @@ function InitializeGLShader() {
 	cube.SetTranslation(vec3(-30, 10.01, 0));
 	cube.mesh = new Cube(20, 20, 20, vec4(1.0, 1.0, 1.0, 1.0));
 	cube.DumpToVertextArray(points, normals, colors, texCoords);
-	cube.SetShader(programCube, modelViewLocCube, projectionLocCube, GroundShaderScript);
+	cube.SetShader(gl, programCube, modelViewLocCube, projectionLocCube, points, normals, colors, texCoords, BumpMapShaderScript);
 	ground.AddChildren(cube);
 	
-	var programSphere= initShaders( gl, "vertex-shader-bumpmap", "fragment-shader-bumpmap" );
+	var programSphere= initShaders( gl, "vertex-shader-envmap", "fragment-shader-envmap" );
     gl.useProgram( programSphere );
     var modelViewLocSphere = gl.getUniformLocation( programSphere, "modelView" );
     var projectionLocSphere = gl.getUniformLocation( programSphere, "projection" );
@@ -264,7 +326,7 @@ function InitializeGLShader() {
 	sphere.SetTranslation(vec3(0, 10.01, 0));
 	sphere.mesh = new Sphere(10, 10, vec4(1.0, 1.0, 1.0, 1.0));
 	sphere.DumpToVertextArray(points, normals, colors, texCoords);
-	sphere.SetShader(programSphere, modelViewLocSphere, projectionLocSphere, BumpMapShaderScript);
+	sphere.SetShader(gl, programSphere, modelViewLocSphere, projectionLocSphere, points, normals, colors, texCoords, EnvMapShaderScript);
 	ground.AddChildren(sphere);
 	
 	var programCylinder= initShaders( gl, "vertex-shader-parallelmap", "fragment-shader-parallelmap" );
@@ -275,45 +337,44 @@ function InitializeGLShader() {
 	cylinder.SetTranslation(vec3(30, 10.01, 0));
 	cylinder.mesh = new Cylinder(10, 10, 20, 10, vec4(1.0, 1.0, 1.0, 1.0));
 	cylinder.DumpToVertextArray(points, normals, colors, texCoords);
-	cylinder.SetShader(programCylinder, modelViewLocCylinder, projectionLocCylinder, GroundShaderScript);
+	cylinder.SetShader(gl, programCylinder, modelViewLocCylinder, projectionLocCylinder, points, normals, colors, texCoords, GroundShaderScript);
 	ground.AddChildren(cylinder);
 	
 	gl.useProgram( programGround );
-	BindShaderData(programGround);
-	configureRawDataTexture(programGround, image1, texSize, texSize, "texture");
+	BindShaderData(programGround, points, normals, colors, texCoords);
+	var texGround = configureRawDataTexture(programGround, image1, texSize, texSize, "texture", 0);
+	gl.activeTexture(gl.TEXTURE0);  // or gl.TEXTURE0 + 7
+	gl.bindTexture(gl.TEXTURE_2D, texGround);
 	
 	gl.useProgram( programCube );
-	BindShaderData(programCube);
-	configureRawDataTexture(programCube, image1, texSize, texSize, "texture");
-	
-	gl.useProgram( programSphere );
-	BindShaderData(programSphere);
-	var diffuseProduct = mult(lightDiffuse, materialDiffuse);
-    gl.uniform4fv( gl.getUniformLocation(programSphere, "diffuseProduct"),flatten(diffuseProduct));	
-    gl.uniform4fv( gl.getUniformLocation(programSphere, "lightPosition"),flatten(lightPosition));
-    gl.uniform3fv( gl.getUniformLocation(programSphere, "objTangent"),flatten(tangent));
+	BindShaderData(programCube, points, normals, colors, texCoords);
 	var bumpMapImg = document.getElementById("bumpMapImg");
 	var bumpMapNormal = document.getElementById("bumpMapNormal");
-	configureImageTexture(programSphere, bumpMapImg, "texture");
-	configureImageTexture(programSphere, bumpMapNormal, "bumpMap");
+    gl.uniform4fv( gl.getUniformLocation(programCube, "bumpmapSize"),flatten(vec2(bumpMapImg.width, bumpMapImg.height)));	
+    gl.uniform3fv( gl.getUniformLocation(programCube, "objTangent"),flatten(tangent));
+	var texBumpImg = configureImageTexture(programCube, bumpMapImg, "texture", 1);
+	var texBumpNormal = configureImageTexture(programCube, bumpMapNormal, "bumpMap", 2);
+	gl.activeTexture(gl.TEXTURE1);  // or gl.TEXTURE0 + 7
+	gl.bindTexture(gl.TEXTURE_2D, texBumpImg);
+	
+	gl.activeTexture(gl.TEXTURE2);  // or gl.TEXTURE0 + 7
+	gl.bindTexture(gl.TEXTURE_2D, texBumpNormal);
+	
+	gl.useProgram( programSphere );
+	BindShaderData(programSphere, points, normals, colors, texCoords);
+	var cubeMapArray = [document.getElementById("posx"),
+						document.getElementById("negx"),
+						document.getElementById("posy"),
+						document.getElementById("negy"),
+						document.getElementById("posz"),
+						document.getElementById("negz")];
+	var cubeTex = configureCubeMap(cubeMapArray);
+	//configureRawDataTexture(programSphere, image1, texSize, texSize, "texture");
 	
 	gl.useProgram( programCylinder );
-	BindShaderData(programCylinder);
-	configureRawDataTexture(programCylinder, image1, texSize, texSize, "texture");
+	BindShaderData(programCylinder, points, normals, colors, texCoords);
+	//configureRawDataTexture(programCylinder, image1, texSize, texSize, "texture");
 	
-	
-    //event listeners for buttons
-
-   /* document.getElementById( "xButton" ).onclick = function ( ) {
-      axis = xAxis;
-    };
-    document.getElementById( "yButton" ).onclick = function ( ) {
-      axis = yAxis;
-    };
-    document.getElementById( "zButton" ).onclick = function ( ) {
-      axis = zAxis;
-    };
-	*/
     render();
 }
 
@@ -376,12 +437,16 @@ function checkKey(e) {
         // up arrow
 		ctrlPressed = 1;
     }
-	
+	var invMV = mat4ToInverseMat3(mvMatrix);
+	var xTrans = vec3(1, 0, 0);
+	var yTrans = vec3(0, 1, 0);
+	var zTrans = vec3(0, 0, 1);
     if (e.keyCode == '37') {	
         // left arrow
 		if (ctrlPressed == 0) {
-			eye[0] -= TRANSLATION_UNIT;
-			at[0] -= TRANSLATION_UNIT;
+			var transInWorld = vec3MultMatrix3x3(invMV, negate(xTrans));
+			eye = add(eye, transInWorld);
+			at = add(at, transInWorld);
 		}
 		else if (ctrlPressed == 1){
 			var dir = subtract(at, eye);
@@ -395,8 +460,9 @@ function checkKey(e) {
 	else if (e.keyCode == '39') {
         // right arrow
 		if (ctrlPressed == 0) {
-			eye[0] += TRANSLATION_UNIT;
-			at[0] += TRANSLATION_UNIT;
+			var transInWorld = vec3MultMatrix3x3(invMV, xTrans);
+			eye = add(eye, transInWorld);
+			at = add(at, transInWorld);
 		}
 		else {
 			var dir = subtract(at, eye);
@@ -410,8 +476,9 @@ function checkKey(e) {
 	if (e.keyCode == '38') {	
         // up arrow
 		if (shiftPressed == 0 && ctrlPressed == 0) {
-			eye[1] += TRANSLATION_UNIT;
-			at[1] += TRANSLATION_UNIT;
+			var transInWorld = vec3MultMatrix3x3(invMV, yTrans);
+			eye = add(eye, transInWorld);
+			at = add(at, transInWorld);
 		}
 		else if (ctrlPressed == 1){
 			var dir = subtract(at, eye);
@@ -421,15 +488,17 @@ function checkKey(e) {
 			up = upVec;
 		}
 		else {
-			eye[2] -= TRANSLATION_UNIT;
-			at[2] -= TRANSLATION_UNIT;
+			var transInWorld = vec3MultMatrix3x3(invMV, negate(zTrans));
+			eye = add(eye, transInWorld);
+			at = add(at, transInWorld);
 		}
     }
     else if (e.keyCode == '40') {
         // down arrow
 		if (shiftPressed == 0 && ctrlPressed == 0) {
-			eye[1] -= TRANSLATION_UNIT;
-			at[1] -= TRANSLATION_UNIT;
+			var transInWorld = vec3MultMatrix3x3(invMV, negate(yTrans));
+			eye = add(eye, transInWorld);
+			at = add(at, transInWorld);
 		}
 		else if (ctrlPressed == 1){
 			var dir = subtract(at, eye);
@@ -439,8 +508,9 @@ function checkKey(e) {
 			up = upVec;
 		}
 		else {
-			eye[2] += TRANSLATION_UNIT;
-			at[2] += TRANSLATION_UNIT;
+			var transInWorld = vec3MultMatrix3x3(invMV, zTrans);
+			eye = add(eye, transInWorld);
+			at = add(at, transInWorld);
 		}
     }
 	

@@ -42,3 +42,10 @@ function vec3Normalize(v) {
 function vec3UpgradeToVec4(u) {
 	return vec4(u[0], u[1], u[2], 1.0);
 }
+
+function vec3MultMatrix3x3 (m, u) {
+	var v = vec3(0, 0, 0);
+	for (var i = 0; i < 3; i++)
+		v[i] = m[i][0] * u[0] + m[i][1] * u[1] + m[i][2] * u[2];
+	return v;
+}

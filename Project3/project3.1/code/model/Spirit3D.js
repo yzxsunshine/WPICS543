@@ -5,17 +5,46 @@ function Spirit3d () {
 	this.mesh = 0;
 	this.localMatrix = [];
 	this.children = [];
-	this.program = 0;
-	this.modelViewLoc = 0;
-	this.projectionLoc = 0;
-	this.shaderScript = 0;
+	this.points = [];
+	this.normals = [];
+	this.colors = [];
+	this.texCoords = [];
+	this.shader = {
+		program 			: 0,
+		shaderScript 		: 0,
+		uMVMatrix 			: 0,
+		uProjMatrix  		: 0,
+		uNormalMatrix 		: 0,
+		uMaterialAmbient   	: 0,
+		uMaterialDiffuse   	: 0,
+		uMaterialSpecular  	: 0,
+		uShininess          : 0,
+		uLightAmbient      	: 0,
+		uLightDiffuse      	: 0,
+		uLightSpecular     	: 0,
+		uLightDirection    	: 0
+	}
 }
 
-Spirit3d.prototype.SetShader = function (prog, mvLoc, projLoc, script) {
-	this.program = prog;
-	this.modelViewLoc = mvLoc;
-	this.projectionLoc  = projLoc;
-	this.shaderScript = script;
+Spirit3d.prototype.SetShader = function (gl, prog, mvLoc, projLoc, pts, norms, cols, texs, script) {
+	this.points = pts;
+	this.normals = norms;
+	this.colors = cols;
+	this.texCoords = texs;
+	
+	this.shader.program = prog;
+	this.shader.shaderScript = script;
+	this.shader.uMVMatrix 			= gl.getUniformLocation(this.shader.program, "uMVMatrix");
+	this.shader.uProjMatrix  		= gl.getUniformLocation(this.shader.program, "uProjMatrix");
+	this.shader.uNormalMatrix 		= gl.getUniformLocation(this.shader.program, "uNormalMatrix");
+	this.shader.uMaterialAmbient   	= gl.getUniformLocation(this.shader.program, "uMaterialAmbient"); 
+    this.shader.uMaterialDiffuse   	= gl.getUniformLocation(this.shader.program, "uMaterialDiffuse");
+    this.shader.uMaterialSpecular  	= gl.getUniformLocation(this.shader.program, "uMaterialSpecular");
+    this.shader.uShininess          = gl.getUniformLocation(this.shader.program, "uShininess");
+    this.shader.uLightAmbient      	= gl.getUniformLocation(this.shader.program, "uLightAmbient");
+    this.shader.uLightDiffuse      	= gl.getUniformLocation(this.shader.program, "uLightDiffuse");
+    this.shader.uLightSpecular     	= gl.getUniformLocation(this.shader.program, "uLightSpecular");
+    this.shader.uLightDirection    	= gl.getUniformLocation(this.shader.program, "uLightDirection");
 }
 
 Spirit3d.prototype.SetTransform = function (pos, angle, axis) {
@@ -74,8 +103,8 @@ Spirit3d.prototype.DumpToVertextArray = function (points, normals, colors, texCo
 Spirit3d.prototype.Render = function  (mvMatrix, projection)  {
 	var tmpMatrix = mult(mvMatrix, this.localMatrix);
 	if (this.mesh != 0) {
-		if (this.shaderScript != 0) {
-			this.shaderScript(this.program, tmpMatrix, this.modelViewLoc, projection, this.projectionLoc);
+		if (this.shader.shaderScript != 0) {
+			this.shader.shaderScript(this.shader, tmpMatrix, projection, this.points, this.normals, this.colors, this.texCoords);
 		}
 		gl.drawArrays( gl.TRIANGLES, this.mesh.startIndex, this.mesh.vertexNum );
 	}
