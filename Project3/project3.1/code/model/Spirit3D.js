@@ -9,6 +9,7 @@ function Spirit3d () {
 	this.normals = [];
 	this.colors = [];
 	this.texCoords = [];
+	this.tangents = [];
 	this.shader = {
 		program 			: 0,
 		shaderScript 		: 0,
@@ -26,11 +27,12 @@ function Spirit3d () {
 	}
 }
 
-Spirit3d.prototype.SetShader = function (gl, prog, mvLoc, projLoc, pts, norms, cols, texs, script) {
+Spirit3d.prototype.SetShader = function (gl, prog, mvLoc, projLoc, pts, norms, cols, texs, tangs, script) {
 	this.points = pts;
 	this.normals = norms;
 	this.colors = cols;
 	this.texCoords = texs;
+	this.tangents = tangs;
 	
 	this.shader.program = prog;
 	this.shader.shaderScript = script;
@@ -90,13 +92,13 @@ Spirit3d.prototype.AddChildren = function (child) {
  *				 normals : normal buffer
  *				 colors : color buffer
  */
-Spirit3d.prototype.DumpToVertextArray = function (points, normals, colors, texCoords) {
+Spirit3d.prototype.DumpToVertextArray = function (points, normals, colors, texCoords, tangentBuffer) {
 	if (this.mesh != 0) {
-		this.mesh.DumpToVertextArray(points, normals, colors, texCoords);
+		this.mesh.DumpToVertextArray(points, normals, colors, texCoords, tangentBuffer);
 	}
 	
 	for (var i=0; i<this.children.length; i++) {
-		this.children[i].DumpToVertextArray(points, normals, colors, texCoords);
+		this.children[i].DumpToVertextArray(points, normals, colors, texCoords, tangentBuffer);
 	}
 }
 
@@ -104,7 +106,7 @@ Spirit3d.prototype.Render = function  (mvMatrix, projection)  {
 	var tmpMatrix = mult(mvMatrix, this.localMatrix);
 	if (this.mesh != 0) {
 		if (this.shader.shaderScript != 0) {
-			this.shader.shaderScript(this.shader, tmpMatrix, projection, this.points, this.normals, this.colors, this.texCoords);
+			this.shader.shaderScript(this.shader, tmpMatrix, projection, this.points, this.normals, this.colors, this.texCoords, this.tangents);
 		}
 		gl.drawArrays( gl.TRIANGLES, this.mesh.startIndex, this.mesh.vertexNum );
 	}

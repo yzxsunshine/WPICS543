@@ -9,6 +9,7 @@ attribute vec4 vPosition;
 attribute vec4 vNormal;
 attribute vec4 vColor;
 attribute  vec2 vTexCoord;
+attribute vec3 aTangent;
 
 varying vec4 fColor;
 varying vec2 fTexCoord;
@@ -96,6 +97,7 @@ attribute vec4 vPosition;
 attribute vec4 vNormal;
 attribute vec4 vColor;
 attribute  vec2 vTexCoord;
+attribute vec3 aTangent;
 
 varying vec4 fColor;
 varying vec2 fTexCoord;
@@ -136,7 +138,8 @@ void main()
 attribute vec4 vPosition;
 attribute vec4 vNormal;
 attribute vec4 vColor;
-attribute  vec2 vTexCoord;
+attribute vec2 vTexCoord;
+attribute vec3 aTangent;
 
 varying vec2 fTexCoord;
 varying vec3 vTangent;
@@ -144,7 +147,6 @@ varying vec3 vN;
 varying mat3 vNormalMatrix;
 varying vec3 vEyeVec;
 
-uniform vec3 objTangent; /* tangent vector in object coordinates */
 
 uniform mat4 uMVMatrix;
 uniform mat4 uProjMatrix;
@@ -155,7 +157,7 @@ void main()
     gl_Position = uProjMatrix * uMVMatrix * vPosition;
     //fColor = vColor;
     fTexCoord = vTexCoord;
-	vTangent = normalize(objTangent);
+	vTangent = normalize(aTangent.xyz);
 	vNormalMatrix = uNormalMatrix;
 	vN = vec3(uNormalMatrix * vNormal.xyz);
      //Vector Eye
@@ -229,8 +231,9 @@ void main()
 
 	//Final color
 	vec4 finalColor = Ia + Id + Is;
+	//finalColor.rgb = vTangent;
 	finalColor.a = 1.0;
-    gl_FragColor = finalColor * texture2D( texture, fTexCoord );
+    gl_FragColor = finalColor;// * texture2D( texture, fTexCoord );
 }
 </script>
 
@@ -239,6 +242,7 @@ attribute vec4 vPosition;
 attribute vec4 vNormal;
 attribute vec4 vColor;
 attribute  vec2 vTexCoord;
+attribute vec3 aTangent;
 
 varying vec4 fColor;
 varying vec2 fTexCoord;

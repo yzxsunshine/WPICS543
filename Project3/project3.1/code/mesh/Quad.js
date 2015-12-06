@@ -35,10 +35,16 @@ function Quad (width, height, colorSet) {
 	this.texCoords.push(vec2(0, 0));
 	this.texCoords.push(vec2(0, 1));
 	this.texCoords.push(vec2(1, 1));
+	this.tangents.push(vec3(1.0, 0.0, 0.0));
+	this.tangents.push(vec3(1.0, 0.0, 0.0));
+	this.tangents.push(vec3(1.0, 0.0, 0.0));
 	this.indices.push(0, 2, 3);
 	this.texCoords.push(vec2(0, 0));
 	this.texCoords.push(vec2(1, 1));
 	this.texCoords.push(vec2(1, 0));
+	this.tangents.push(vec3(1.0, 0.0, 0.0));
+	this.tangents.push(vec3(1.0, 0.0, 0.0));
+	this.tangents.push(vec3(1.0, 0.0, 0.0));
 	
 	this.faceColors = [];
 	for (var i = 0; i < this.indices.length / 3; i++) {

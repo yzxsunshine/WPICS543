@@ -83,9 +83,14 @@ function Cylinder (topRadius, bottomRadius, height, numFacets, colorSet) {
 	var bottomY = -height / 2;
 	var topCenterID = this.vertices.length;
 	CreateCircle(vec3(0, topY, 0), numFacets, topRadius, this.vertices, this.indices, this.texCoords, this.faceNormals);
+	for (var i = 0; i < numFacets * 3; i++) {
+		this.tangents.push(vec3(1.0, 0.0, 0.0));
+	}
 	var bottomCenterID = this.vertices.length;
 	CreateCircle(vec3(0, bottomY, 0), numFacets, bottomRadius, this.vertices, this.indices, this.texCoords, this.faceNormals);
-	
+	for (var i = 0; i < numFacets * 3; i++) {
+		this.tangents.push(vec3(-1.0, 0.0, 0.0));
+	}
 	var colorMod = colorSet.length;
 	if (colorSet.length == 4) {	// possibly to be a single color
 		if (typeof(colorSet[0]) == "number") {
@@ -124,5 +129,7 @@ function Cylinder (topRadius, bottomRadius, height, numFacets, colorSet) {
 		this.indices.push((i + 1) % numFacets + topCenterID + 1);
 		this.texCoords.push(vec2(xTex_1, 0));
 		
+		for (var j = 0; j < 6; j++)
+			this.tangents.push(subtract(this.vertices[(i + 1) % numFacets + topCenterID + 1], this.vertices[i + topCenterID + 1]));
 	}
 }

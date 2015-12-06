@@ -18,6 +18,7 @@ var points = [];
 var colors = [];
 var normals = [];
 var texCoords = [];
+var tangents = [];
 
 var textureGround;
 var texCounter = 0;
@@ -97,7 +98,6 @@ var shiftPressed = 0;
 var ctrlPressed = 0;
 
 // bump map
-var tangent = vec3(1.0, 0.0, 0.0);
 var lightPosition = vec4(0.0, 2.0, 0.0, 1.0 );
 var lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
 var materialDiffuse = vec4( 0.7, 0.7, 0.7, 1.0 );
@@ -212,7 +212,7 @@ function configureCubeMap (img) {
 	return texID;
 }
 
-function BindShaderData (program, pts, norms, cols, texs) {
+function BindShaderData (program, pts, norms, cols, texs, tangs) {
     var vColor = gl.getAttribLocation( program, "vColor" );
 	if (vColor >= 0) {
 		var cBuffer = gl.createBuffer();
@@ -249,6 +249,15 @@ function BindShaderData (program, pts, norms, cols, texs) {
 	    gl.vertexAttribPointer( vTexCoord, 2, gl.FLOAT, false, 0, 0 );
 		gl.enableVertexAttribArray( vTexCoord );
 	}
+	
+	var aTangent = gl.getAttribLocation( program, "aTangent" );
+	if (aTangent >= 0) {
+		var tangentBuffer = gl.createBuffer();
+		gl.bindBuffer( gl.ARRAY_BUFFER, tangentBuffer );
+		gl.bufferData( gl.ARRAY_BUFFER, flatten(tangs), gl.STATIC_DRAW );
+		gl.vertexAttribPointer( aTangent, 3, gl.FLOAT, false, 0, 0 );
+		gl.enableVertexAttribArray( aTangent );
+	}
 }
 
 function initLights(shader){
@@ -262,34 +271,51 @@ function initLights(shader){
     gl.uniform1f(shader.uShininess, 230.0);
 }
 
-function BumpMapShaderScript (shader, mvMatrix, projMatrix, pts, norms, cols, texs) {
+function BumpMapShaderScript (shader, mvMatrix, projMatrix, pts, norms, cols, texs, tangs) {
 	gl.useProgram( shader.program );
-	BindShaderData(shader.program, pts, norms, cols, texs);
+	BindShaderData(shader.program, pts, norms, cols, texs, tangs);
 	gl.uniformMatrix4fv( shader.uMVMatrix, false, flatten( mvMatrix ) );
 	gl.uniformMatrix4fv( shader.uProjMatrix, false, flatten( projMatrix ) );
 	var normalMatrix = mat4ToInverseMat3(mvMatrix);
     gl.uniformMatrix3fv( shader.uNormalMatrix, false, flatten(normalMatrix));
 	initLights(shader);
+	
+	var bumpMapImg = document.getElementById("bumpMapImg");
+	var bumpMapNormal = document.getElementById("bumpMapNormal");
+    gl.uniform2fv( gl.getUniformLocation(shader.program, "bumpmapSize"),flatten(vec2(bumpMapImg.width, bumpMapImg.height)));	
+	var texBumpImg = configureImageTexture(shader.program, bumpMapImg, "texture", 0);
+	var texBumpNormal = configureImageTexture(shader.program, bumpMapNormal, "bumpMap", 1);
+	gl.activeTexture(gl.TEXTURE0);  // or gl.TEXTURE0 + 7
+	gl.bindTexture(gl.TEXTURE_2D, texBumpImg);
+	
+	gl.activeTexture(gl.TEXTURE1);  // or gl.TEXTURE0 + 7
+	gl.bindTexture(gl.TEXTURE_2D, texBumpNormal);
 }
 
-function EnvMapShaderScript (shader, mvMatrix, projMatrix, pts, norms, cols, texs) {
+function EnvMapShaderScript (shader, mvMatrix, projMatrix, pts, norms, cols, texs, tangs) {
 	gl.useProgram( shader.program );
-	BindShaderData(shader.program, pts, norms, cols, texs);
+	BindShaderData(shader.program, pts, norms, cols, texs, tangs);
 	gl.uniformMatrix4fv( shader.uMVMatrix, false, flatten( mvMatrix ) );
 	gl.uniformMatrix4fv( shader.uProjMatrix, false, flatten( projMatrix ) );
 	var normalMatrix = mat4ToInverseMat3(mvMatrix);
     gl.uniformMatrix3fv( shader.uNormalMatrix, false, flatten(normalMatrix));
 	//initLights(shader);
+	
 }
 
-function GroundShaderScript (shader, mvMatrix, projMatrix, pts, norms, cols, texs) {
+function GroundShaderScript (shader, mvMatrix, projMatrix, pts, norms, cols, texs, tangs) {
 	gl.useProgram( shader.program );
-	BindShaderData(shader.program, pts, norms, cols, texs);
+	BindShaderData(shader.program, pts, norms, cols, texs, tangs);
+	
 	gl.uniformMatrix4fv( shader.uMVMatrix, false, flatten( mvMatrix ) );
 	gl.uniformMatrix4fv( shader.uProjMatrix, false, flatten( projMatrix ) );
 	var normalMatrix = mat4ToInverseMat3(mvMatrix);
     gl.uniformMatrix3fv( shader.uNormalMatrix, false, flatten(normalMatrix));
 	initLights(shader);
+	
+	var texGround = configureRawDataTexture(shader.shader, image1, texSize, texSize, "texture", 0);
+	gl.activeTexture(gl.TEXTURE0);
+	gl.bindTexture(gl.TEXTURE_2D, texGround);
 }
 
 function InitializeGLShader() {
@@ -304,8 +330,10 @@ function InitializeGLShader() {
 	ground = new Spirit3d();
 	ground.SetTranslation(vec3(0, 0, 0));
 	ground.mesh = new Quad(100, 100, vec4(0.5, 0.5, 0.4, 1.0));
-	ground.DumpToVertextArray(points, normals, colors, texCoords);
-	ground.SetShader(gl, programGround, modelViewLocGround, projectionLocGround, points, normals, colors, texCoords, GroundShaderScript);
+	ground.DumpToVertextArray(points, normals, colors, texCoords, tangents);
+	ground.SetShader(gl, programGround, modelViewLocGround, projectionLocGround, points, normals, colors, texCoords, tangents, GroundShaderScript);
+	
+	
 
 	var programCube= initShaders( gl, "vertex-shader-bumpmap", "fragment-shader-bumpmap" );
     gl.useProgram( programCube );
@@ -314,8 +342,8 @@ function InitializeGLShader() {
 	var cube = new Spirit3d();
 	cube.SetTranslation(vec3(-30, 10.01, 0));
 	cube.mesh = new Cube(20, 20, 20, vec4(1.0, 1.0, 1.0, 1.0));
-	cube.DumpToVertextArray(points, normals, colors, texCoords);
-	cube.SetShader(gl, programCube, modelViewLocCube, projectionLocCube, points, normals, colors, texCoords, BumpMapShaderScript);
+	cube.DumpToVertextArray(points, normals, colors, texCoords, tangents);
+	cube.SetShader(gl, programCube, modelViewLocCube, projectionLocCube, points, normals, colors, texCoords, tangents, BumpMapShaderScript);
 	ground.AddChildren(cube);
 	
 	var programSphere= initShaders( gl, "vertex-shader-envmap", "fragment-shader-envmap" );
@@ -325,8 +353,8 @@ function InitializeGLShader() {
 	var sphere = new Spirit3d();
 	sphere.SetTranslation(vec3(0, 10.01, 0));
 	sphere.mesh = new Sphere(10, 10, vec4(1.0, 1.0, 1.0, 1.0));
-	sphere.DumpToVertextArray(points, normals, colors, texCoords);
-	sphere.SetShader(gl, programSphere, modelViewLocSphere, projectionLocSphere, points, normals, colors, texCoords, EnvMapShaderScript);
+	sphere.DumpToVertextArray(points, normals, colors, texCoords, tangents);
+	sphere.SetShader(gl, programSphere, modelViewLocSphere, projectionLocSphere, points, normals, colors, texCoords, tangents, EnvMapShaderScript);
 	ground.AddChildren(sphere);
 	
 	var programCylinder= initShaders( gl, "vertex-shader-parallelmap", "fragment-shader-parallelmap" );
@@ -336,32 +364,20 @@ function InitializeGLShader() {
 	var cylinder = new Spirit3d();
 	cylinder.SetTranslation(vec3(30, 10.01, 0));
 	cylinder.mesh = new Cylinder(10, 10, 20, 10, vec4(1.0, 1.0, 1.0, 1.0));
-	cylinder.DumpToVertextArray(points, normals, colors, texCoords);
-	cylinder.SetShader(gl, programCylinder, modelViewLocCylinder, projectionLocCylinder, points, normals, colors, texCoords, GroundShaderScript);
+	cylinder.DumpToVertextArray(points, normals, colors, texCoords, tangents);
+	cylinder.SetShader(gl, programCylinder, modelViewLocCylinder, projectionLocCylinder, points, normals, colors, texCoords, tangents, GroundShaderScript);
 	ground.AddChildren(cylinder);
+
 	
 	gl.useProgram( programGround );
-	BindShaderData(programGround, points, normals, colors, texCoords);
-	var texGround = configureRawDataTexture(programGround, image1, texSize, texSize, "texture", 0);
-	gl.activeTexture(gl.TEXTURE0);  // or gl.TEXTURE0 + 7
-	gl.bindTexture(gl.TEXTURE_2D, texGround);
+	BindShaderData(programGround, points, normals, colors, texCoords, tangents);
 	
 	gl.useProgram( programCube );
-	BindShaderData(programCube, points, normals, colors, texCoords);
-	var bumpMapImg = document.getElementById("bumpMapImg");
-	var bumpMapNormal = document.getElementById("bumpMapNormal");
-    gl.uniform4fv( gl.getUniformLocation(programCube, "bumpmapSize"),flatten(vec2(bumpMapImg.width, bumpMapImg.height)));	
-    gl.uniform3fv( gl.getUniformLocation(programCube, "objTangent"),flatten(tangent));
-	var texBumpImg = configureImageTexture(programCube, bumpMapImg, "texture", 1);
-	var texBumpNormal = configureImageTexture(programCube, bumpMapNormal, "bumpMap", 2);
-	gl.activeTexture(gl.TEXTURE1);  // or gl.TEXTURE0 + 7
-	gl.bindTexture(gl.TEXTURE_2D, texBumpImg);
+	BindShaderData(programCube, points, normals, colors, texCoords, tangents);
 	
-	gl.activeTexture(gl.TEXTURE2);  // or gl.TEXTURE0 + 7
-	gl.bindTexture(gl.TEXTURE_2D, texBumpNormal);
 	
 	gl.useProgram( programSphere );
-	BindShaderData(programSphere, points, normals, colors, texCoords);
+	BindShaderData(programSphere, points, normals, colors, texCoords, tangents);
 	var cubeMapArray = [document.getElementById("posx"),
 						document.getElementById("negx"),
 						document.getElementById("posy"),
@@ -372,7 +388,7 @@ function InitializeGLShader() {
 	//configureRawDataTexture(programSphere, image1, texSize, texSize, "texture");
 	
 	gl.useProgram( programCylinder );
-	BindShaderData(programCylinder, points, normals, colors, texCoords);
+	BindShaderData(programCylinder, points, normals, colors, texCoords, tangents);
 	//configureRawDataTexture(programCylinder, image1, texSize, texSize, "texture");
 	
     render();
