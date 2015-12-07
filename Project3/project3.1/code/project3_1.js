@@ -313,7 +313,7 @@ function GroundShaderScript (shader, mvMatrix, projMatrix, pts, norms, cols, tex
     gl.uniformMatrix3fv( shader.uNormalMatrix, false, flatten(normalMatrix));
 	initLights(shader);
 	
-	var texGround = configureRawDataTexture(shader.shader, image1, texSize, texSize, "texture", 0);
+	var texGround = configureRawDataTexture(shader.program, image1, texSize, texSize, "texture", 0);
 	gl.activeTexture(gl.TEXTURE0);
 	gl.bindTexture(gl.TEXTURE_2D, texGround);
 }

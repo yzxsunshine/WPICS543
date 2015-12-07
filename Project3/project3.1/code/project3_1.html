@@ -159,7 +159,7 @@ void main()
     fTexCoord = vTexCoord;
 	vTangent = normalize(aTangent.xyz);
 	vNormalMatrix = uNormalMatrix;
-	vN = vec3(uNormalMatrix * vNormal.xyz);
+	vN = vec3(vNormal.xyz);
      //Vector Eye
     vEyeVec = -vec3(vPosition.xyz);
 }
@@ -202,8 +202,8 @@ void main()
 	float bmUp = texture2D( bumpMap, fTexCoord + vec2(0.0, 1.0/bumpmapSize.y) ).r; 
 	float bmRight = texture2D( bumpMap, fTexCoord + vec2(1.0/bumpmapSize.x, 0.0) ).r;
 	vec3 bumpVector = (bmRight - bm0)*vTangent + (bmUp - bm0)*binormal;
-	//normal += bumpVector;
-	//normal = normalize( vNormalMatrix*normal );
+	normal += 5.0 * bumpVector;
+	normal = normalize( vNormalMatrix*normal );
 	
 	
 	//Lambert's cosine law
