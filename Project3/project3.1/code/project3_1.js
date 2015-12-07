@@ -102,6 +102,9 @@ var lightPosition = vec4(0.0, 2.0, 0.0, 1.0 );
 var lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
 var materialDiffuse = vec4( 0.7, 0.7, 0.7, 1.0 );
 
+var loadedImg = 0;
+var windowLoaded = 0;
+
 function mat4ToInverseMat3(mat) {
     dest = mat3();
 	var a00 = mat[0][0], a01 = mat[0][1], a02 = mat[0][2];
@@ -129,6 +132,13 @@ function mat4ToInverseMat3(mat) {
 	
 	return dest;
 };
+
+function LoadImages(e) {
+	loadedImg++;
+	if (loadedImg == 8 && windowLoaded == 1) {
+		InitializeGLShader();
+	}
+}
 
 // Create a checkerboard pattern using floats
 var image1 = new Uint8Array( tDepth * texSize * texSize );
@@ -292,6 +302,27 @@ function BumpMapShaderScript (shader, mvMatrix, projMatrix, pts, norms, cols, te
 	gl.bindTexture(gl.TEXTURE_2D, texBumpNormal);
 }
 
+function ParallaxMapShaderScript (shader, mvMatrix, projMatrix, pts, norms, cols, texs, tangs) {
+	gl.useProgram( shader.program );
+	BindShaderData(shader.program, pts, norms, cols, texs, tangs);
+	gl.uniformMatrix4fv( shader.uMVMatrix, false, flatten( mvMatrix ) );
+	gl.uniformMatrix4fv( shader.uProjMatrix, false, flatten( projMatrix ) );
+	var normalMatrix = mat4ToInverseMat3(mvMatrix);
+    gl.uniformMatrix3fv( shader.uNormalMatrix, false, flatten(normalMatrix));
+	initLights(shader);
+	
+	var bumpMapImg = document.getElementById("bumpMapImg");
+	var bumpMapNormal = document.getElementById("bumpMapNormal");
+    gl.uniform2fv( gl.getUniformLocation(shader.program, "scaleBias"),flatten(vec2(0.05, 0.01)));	
+	var texBumpImg = configureImageTexture(shader.program, bumpMapImg, "texture", 0);
+	var texBumpNormal = configureImageTexture(shader.program, bumpMapNormal, "parallaxMap", 1);
+	gl.activeTexture(gl.TEXTURE0);  // or gl.TEXTURE0 + 7
+	gl.bindTexture(gl.TEXTURE_2D, texBumpImg);
+	
+	gl.activeTexture(gl.TEXTURE1);  // or gl.TEXTURE0 + 7
+	gl.bindTexture(gl.TEXTURE_2D, texBumpNormal);
+}
+
 function EnvMapShaderScript (shader, mvMatrix, projMatrix, pts, norms, cols, texs, tangs) {
 	gl.useProgram( shader.program );
 	BindShaderData(shader.program, pts, norms, cols, texs, tangs);
@@ -352,7 +383,7 @@ function InitializeGLShader() {
     var projectionLocSphere = gl.getUniformLocation( programSphere, "projection" );
 	var sphere = new Spirit3d();
 	sphere.SetTranslation(vec3(0, 10.01, 0));
-	sphere.mesh = new Sphere(10, 10, vec4(1.0, 1.0, 1.0, 1.0));
+	sphere.mesh = new Sphere(10, 16, vec4(1.0, 1.0, 1.0, 1.0));
 	sphere.DumpToVertextArray(points, normals, colors, texCoords, tangents);
 	sphere.SetShader(gl, programSphere, modelViewLocSphere, projectionLocSphere, points, normals, colors, texCoords, tangents, EnvMapShaderScript);
 	ground.AddChildren(sphere);
@@ -363,9 +394,9 @@ function InitializeGLShader() {
     var projectionLocCylinder = gl.getUniformLocation( programCylinder, "projection" );
 	var cylinder = new Spirit3d();
 	cylinder.SetTranslation(vec3(30, 10.01, 0));
-	cylinder.mesh = new Cylinder(10, 10, 20, 10, vec4(1.0, 1.0, 1.0, 1.0));
+	cylinder.mesh = new Cylinder(10, 10, 20, 16, vec4(1.0, 1.0, 1.0, 1.0));
 	cylinder.DumpToVertextArray(points, normals, colors, texCoords, tangents);
-	cylinder.SetShader(gl, programCylinder, modelViewLocCylinder, projectionLocCylinder, points, normals, colors, texCoords, tangents, GroundShaderScript);
+	cylinder.SetShader(gl, programCylinder, modelViewLocCylinder, projectionLocCylinder, points, normals, colors, texCoords, tangents, ParallaxMapShaderScript);
 	ground.AddChildren(cylinder);
 
 	
@@ -583,7 +614,11 @@ window.onload = function init()
     gl.enable(gl.DEPTH_TEST);
 	
 	ResetCamera();
-	InitializeGLShader();
+	//InitializeGLShader();
+	windowLoaded = 1;
+	if (loadedImg == 8 && windowLoaded == 1) {
+		InitializeGLShader();
+	}
 };
 
 

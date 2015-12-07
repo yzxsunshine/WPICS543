@@ -75,6 +75,9 @@ function Sphere (radius, numBands, colorSet) {
 			this.texCoords.push(vec2(xTex_1, yTex_1));
 			this.texCoords.push(vec2(xTex, yTex_1));
 			this.texCoords.push(vec2(xTex_1, yTex));
+			
+			for (var k = 0; k < 6; k++)
+				this.tangents.push(subtract(this.vertices[up + 1], this.vertices[up]));
 		}
 	}
 }

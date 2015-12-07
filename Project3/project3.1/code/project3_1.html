@@ -159,7 +159,7 @@ void main()
     fTexCoord = vTexCoord;
 	vTangent = normalize(aTangent.xyz);
 	vNormalMatrix = uNormalMatrix;
-	vN = vec3(vNormal.xyz);
+	vN = vec3(vNormalMatrix * vNormal.xyz);
      //Vector Eye
     vEyeVec = -vec3(vPosition.xyz);
 }
@@ -202,8 +202,8 @@ void main()
 	float bmUp = texture2D( bumpMap, fTexCoord + vec2(0.0, 1.0/bumpmapSize.y) ).r; 
 	float bmRight = texture2D( bumpMap, fTexCoord + vec2(1.0/bumpmapSize.x, 0.0) ).r;
 	vec3 bumpVector = (bmRight - bm0)*vTangent + (bmUp - bm0)*binormal;
-	normal += 5.0 * bumpVector;
-	normal = normalize( vNormalMatrix*normal );
+	normal += 10.0 * bumpVector;
+	normal = normalize( normal );
 	
 	
 	//Lambert's cosine law
@@ -231,9 +231,9 @@ void main()
 
 	//Final color
 	vec4 finalColor = Ia + Id + Is;
-	//finalColor.rgb = vTangent;
+	//finalColor.rgb = 10.0 * bumpVector;
 	finalColor.a = 1.0;
-    gl_FragColor = finalColor;// * texture2D( texture, fTexCoord );
+    gl_FragColor = finalColor * texture2D( texture, fTexCoord );
 }
 </script>
 
@@ -241,35 +241,108 @@ void main()
 attribute vec4 vPosition;
 attribute vec4 vNormal;
 attribute vec4 vColor;
-attribute  vec2 vTexCoord;
+attribute vec2 vTexCoord;
 attribute vec3 aTangent;
 
-varying vec4 fColor;
 varying vec2 fTexCoord;
+varying vec3 vTangent;
+varying vec3 vN;
+varying vec3 vBinormal;
+varying mat3 vTBNMatrix;
+ 
+varying vec3 tsPosition;
+varying vec3 vEyeVec;
 
 uniform mat4 uMVMatrix;
 uniform mat4 uProjMatrix;
-uniform mat3 uNormalMatrix;
 
 void main()
 {
     gl_Position = uProjMatrix * uMVMatrix * vPosition;
-    fColor = vColor;
+    //fColor = vColor;
     fTexCoord = vTexCoord;
+	vTangent = normalize(aTangent.xyz);
+	vN = vec3(vNormal.xyz);
+	vBinormal = normalize( cross( vN, vTangent ) );
+	vTBNMatrix = mat3(vTangent, vBinormal, vN);
+    tsPosition = vTBNMatrix * vPosition.xyz;
+    vEyeVec = -vec3(vPosition.xyz);
 }
 </script>
 
 <script id="fragment-shader-parallelmap" type="x-shader/x-fragment">
 precision mediump float;
-   
-varying vec4 fColor;
-varying  vec2 fTexCoord;
+varying vec3 L;
+varying vec3 V;
 
 uniform sampler2D texture;
+uniform sampler2D parallaxMap;
+
+uniform float uShininess;        //shininess
+ 
+uniform vec4 uLightAmbient;      //light ambient property
+uniform vec4 uLightDiffuse;      //light diffuse property 
+uniform vec4 uLightSpecular;     //light specular property
+uniform vec3 uLightDirection;
+ 
+uniform vec4 uMaterialAmbient;  //object ambient property
+uniform vec4 uMaterialDiffuse;   //object diffuse property
+uniform vec4 uMaterialSpecular;  //object specular property
+ 
+uniform vec2 scaleBias;
+
+varying vec2 fTexCoord;
+varying vec3 vTangent;
+varying vec3 vN;
+varying vec3 vBinormal;
+ 
+varying vec3 tsPosition;
+varying vec3 vEyeVec;
+varying mat3 vTBNMatrix;
 
 void main()
 {
-    gl_FragColor = vec4(1, 0, 0, 1) * texture2D( texture, fTexCoord );
+	float height = texture2D(parallaxMap, fTexCoord).a;
+    float v = height * scaleBias.r - scaleBias.g;
+ 
+    // normalize the camera's tangent space position
+    vec3 eye = normalize(vTBNMatrix * vEyeVec);
+ 
+    vec2 newCoords = fTexCoord + (eye.xy * v);
+	
+	vec3 normal = normalize(vTBNMatrix * vN + texture2D(parallaxMap, fTexCoord).rgb * 2.0 - 1.0);
+	vec3 lightDirection = uLightDirection;
+	lightDirection.z = -uLightDirection.z;
+	vec3 L = normalize(vTBNMatrix * lightDirection);
+	
+	//Lambert's cosine law
+	float lambertTerm = dot(normal, -L);
+
+	//Ambient Term
+	vec4 Ia = uLightAmbient * uMaterialAmbient;
+
+	//Diffuse Term
+	vec4 Id = vec4(0.0,0.0,0.0,1.0);
+
+	//Specular Term
+	vec4 Is = vec4(0.0,0.0,0.0,1.0);
+
+	if(lambertTerm > 0.0) //only if lambertTerm is positive
+	{
+	  Id = uLightDiffuse * uMaterialDiffuse * lambertTerm; //add diffuse term
+	  
+	  vec3 E = normalize(eye);
+	  vec3 R = reflect(L, normal);
+	  float specular = pow( max(dot(R, E), 0.0), uShininess);
+	  
+	  Is = uLightSpecular * uMaterialSpecular * specular; //add specular term 
+	}
+
+	//Final color
+	vec4 finalColor = Ia + Id + Is;
+	//finalColor.rgb = vTangent;
+	finalColor.a = 1.0;
+    gl_FragColor = finalColor * texture2D( texture, fTexCoord );
 }
 </script>
 
@@ -291,14 +364,14 @@ void main()
 Oops ... your browser doesn't support the HTML5 canvas element
 </canvas>
 
-<img id = "bumpMapImg" src = "textures/Bump-Picture.jpg" hidden></img>
-<img id = "bumpMapNormal" src = "textures/Bump-Map.jpg" hidden></img>
-<img id = "posx" src = "textures/posx.jpg" hidden></img>
-<img id = "posy" src = "textures/posy.jpg" hidden></img>
-<img id = "posz" src = "textures/posz.jpg" hidden></img>
-<img id = "negx" src = "textures/negx.jpg" hidden></img>
-<img id = "negy" src = "textures/negy.jpg" hidden></img>
-<img id = "negz" src = "textures/negz.jpg" hidden></img>
+<img id = "bumpMapImg" src = "textures/Bump-Picture.jpg" onload = "LoadImages()" hidden></img>
+<img id = "bumpMapNormal" src = "textures/Bump-Map.jpg" onload = "LoadImages()" hidden></img>
+<img id = "posx" src = "textures/posx.jpg" onload = "LoadImages()" hidden></img>
+<img id = "posy" src = "textures/posy.jpg" onload = "LoadImages()" hidden></img>
+<img id = "posz" src = "textures/posz.jpg" onload = "LoadImages()" hidden></img>
+<img id = "negx" src = "textures/negx.jpg" onload = "LoadImages()" hidden></img>
+<img id = "negy" src = "textures/negy.jpg" onload = "LoadImages()" hidden></img>
+<img id = "negz" src = "textures/negz.jpg" onload = "LoadImages()" hidden></img>
 
 <div id="output"></div>
 <!--
