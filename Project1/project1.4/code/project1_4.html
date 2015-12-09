@@ -4,62 +4,179 @@
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" >
 <title>Project 2 L-System New Stuff</title>
 
-<script id="vertex-shader" type="x-shader/x-vertex">
+<script id="vertex-shader-color" type="x-shader/x-vertex">
 attribute vec4 vPosition;
+attribute vec4 vNormal;
 attribute vec4 vColor;
+attribute vec2 vTexCoord;
+attribute vec3 aTangent;
+
 varying vec4 fColor;
+varying vec2 fTexCoord;
+varying vec3 vN;
+varying vec3 vEyeVec;
+//varying vec3 vLightDirection;  //light direction
 
-uniform    vec3 theta;
-uniform    vec3 trans;
-
-uniform vec4 ambientProduct, diffuseProduct, specularProduct;
-uniform mat4 modelViewMatrix;
-uniform mat4 projectionMatrix;
-uniform vec4 lightPosition;
-uniform float shininess;
+uniform mat4 uMVMatrix;
+uniform mat4 uProjMatrix;
+uniform mat3 uNormalMatrix;
 
 void main()
-{
-    vec3 rads = radians( theta );
-    vec3    c = cos( rads );
-    vec3    s = sin( rads );
-
-    // Remember: these matrices are column-major
-    mat4 rx = mat4( 1.0,  0.0,  0.0, 0.0,
- 		    0.0,  c.x,  s.x, 0.0,
-		    0.0, -s.x,  c.x, 0.0,
-		    0.0,  0.0,  0.0, 1.0 );
-
-    mat4 ry = mat4( c.y, 0.0, -s.y, 0.0,
-		    0.0, 1.0,  0.0, 0.0,
-		    s.y, 0.0,  c.y, 0.0,
-		    0.0, 0.0,  0.0, 1.0 );
-
-
-    mat4 rz = mat4( c.z, -s.z, 0.0, 0.0,
-		    s.z,  c.z, 0.0, 0.0,
-		    0.0,  0.0, 1.0, 0.0,
-		    0.0,  0.0, 0.0, 1.0 );
-	mat4 tMat = mat4( 1.0, 0.0, 0.0, 0.0,
-		      0.0, 1.0, 0.0, 0.0,
-		      0.0, 0.0, 1.0, 0.0,
-		      trans.x, trans.y, trans.z, 1.0 );
-			  
+{			  
+    gl_Position = uProjMatrix * uMVMatrix * vPosition;
     fColor = vColor;
-
-    gl_Position = projection * modelView * tMat * rz * ry * rx * vPosition;
-    fColor = vColor;
+    fTexCoord = vTexCoord;
+     //Transformed normal position
+    vN = vec3(uNormalMatrix * vNormal.xyz);
+     //Vector Eye
+    vEyeVec = -vec3(vPosition.xyz);
 }
 </script>
 
-<script id="fragment-shader" type="x-shader/x-fragment">
+<script id="fragment-shader-color" type="x-shader/x-fragment">
+precision mediump float;
+   
 precision mediump float;
    
 varying vec4 fColor;
+varying  vec2 fTexCoord;
+
+uniform float uShininess;        //shininess
+ 
+uniform vec4 uLightAmbient;      //light ambient property
+uniform vec4 uLightDiffuse;      //light diffuse property 
+uniform vec4 uLightSpecular;     //light specular property
+uniform vec3 uLightDirection;
+ 
+uniform vec4 uMaterialAmbient;  //object ambient property
+uniform vec4 uMaterialDiffuse;   //object diffuse property
+uniform vec4 uMaterialSpecular;  //object specular property
+ 
+varying vec3 vN;
+varying vec3 vEyeVec;
 
 void main()
 {
-    gl_FragColor = fColor;
+	vec3 L = normalize(uLightDirection);
+	vec3 N = normalize(vN);
+     
+	//Lambert's cosine law
+	float lambertTerm = dot(N,-L);
+
+	//Ambient Term
+	vec4 Ia = uLightAmbient * uMaterialAmbient;
+
+	//Diffuse Term
+	vec4 Id = vec4(0.0,0.0,0.0,1.0);
+
+	//Specular Term
+	vec4 Is = vec4(0.0,0.0,0.0,1.0);
+
+	if(lambertTerm > 0.0) //only if lambertTerm is positive
+	{
+	  Id = uLightDiffuse * uMaterialDiffuse * lambertTerm; //add diffuse term
+	  
+	  vec3 E = normalize(vEyeVec);
+	  vec3 R = reflect(L, N);
+	  float specular = pow( max(dot(R, E), 0.0), uShininess);
+	  
+	  Is = uLightSpecular * uMaterialSpecular * specular; //add specular term 
+	}
+
+	//Final color
+	vec4 finalColor = Ia + Id + Is;
+	finalColor.a = 1.0;
+    gl_FragColor = finalColor * fColor;
+}
+</script>
+
+<title>Project 3 New Stuff</title>
+
+<script id="vertex-shader-texture" type="x-shader/x-vertex">
+attribute vec4 vPosition;
+attribute vec4 vNormal;
+attribute vec4 vColor;
+attribute  vec2 vTexCoord;
+attribute vec3 aTangent;
+
+varying vec4 fColor;
+varying vec2 fTexCoord;
+varying vec3 vN;
+varying vec3 vEyeVec;
+//varying vec3 vLightDirection;  //light direction
+
+uniform mat4 uMVMatrix;
+uniform mat4 uProjMatrix;
+uniform mat3 uNormalMatrix;
+
+void main()
+{
+    gl_Position = uProjMatrix * uMVMatrix * vPosition;
+    fColor = vColor;
+    fTexCoord = vTexCoord;
+     //Transformed normal position
+    vN = vec3(uNormalMatrix * vNormal.xyz);
+     //Vector Eye
+    vEyeVec = -vec3(vPosition.xyz);
+	//vLightDirection = lightPosition - vPosition.xyz;
+}
+</script>
+
+<script id="fragment-shader-texture" type="x-shader/x-fragment">
+precision mediump float;
+   
+varying vec4 fColor;
+varying  vec2 fTexCoord;
+
+uniform float uShininess;        //shininess
+ 
+uniform vec4 uLightAmbient;      //light ambient property
+uniform vec4 uLightDiffuse;      //light diffuse property 
+uniform vec4 uLightSpecular;     //light specular property
+uniform vec3 uLightDirection;
+ 
+uniform vec4 uMaterialAmbient;  //object ambient property
+uniform vec4 uMaterialDiffuse;   //object diffuse property
+uniform vec4 uMaterialSpecular;  //object specular property
+ 
+varying vec3 vN;
+varying vec3 vEyeVec;
+//varying vec3 vLightDirection;  //light direction
+
+uniform sampler2D texture;
+
+void main()
+{
+	vec3 L = normalize(uLightDirection);
+	vec3 N = normalize(vN);
+     
+	//Lambert's cosine law
+	float lambertTerm = dot(N,-L);
+
+	//Ambient Term
+	vec4 Ia = uLightAmbient * uMaterialAmbient;
+
+	//Diffuse Term
+	vec4 Id = vec4(0.0,0.0,0.0,1.0);
+
+	//Specular Term
+	vec4 Is = vec4(0.0,0.0,0.0,1.0);
+
+	if(lambertTerm > 0.0) //only if lambertTerm is positive
+	{
+	  Id = uLightDiffuse * uMaterialDiffuse * lambertTerm; //add diffuse term
+	  
+	  vec3 E = normalize(vEyeVec);
+	  vec3 R = reflect(L, N);
+	  float specular = pow( max(dot(R, E), 0.0), uShininess);
+	  
+	  Is = uLightSpecular * uMaterialSpecular * specular; //add specular term 
+	}
+
+	//Final color
+	vec4 finalColor = Ia + Id + Is;
+	finalColor.a = 1.0;
+    gl_FragColor = finalColor * texture2D( texture, fTexCoord );
 }
 </script>
 
@@ -70,14 +187,18 @@ void main()
 <script type="text/javascript" src="mesh/Mesh.js"></script>
 <script type="text/javascript" src="mesh/Cylinder.js"></script>
 <script type="text/javascript" src="mesh/Sphere.js"></script>
-<script type="text/javascript" src="mesh/PolyCylinder.js"></script>
 <script type="text/javascript" src="mesh/Cube.js"></script>
 <script type="text/javascript" src="model/Spirit3D.js"></script>
+<script type="text/javascript" src="mesh/PolyCylinder.js"></script>
 <script type="text/javascript" src="model/Lamp.js"></script>
 <script type="text/javascript" src="project1_4.js"></script>
 </head>
 
 <body>
+
+<img id = "brick" src = "textures/bricks.jpg" onload = "LoadImages()" hidden></img>
+<img id = "library_front" src = "textures/library-front.png" onload = "LoadImages()" hidden></img>
+
 <canvas id="gl-canvas" width="512" height="512">
 Oops ... your browser doesn't support the HTML5 canvas element
 </canvas>

@@ -11,6 +11,9 @@
  * (c) Copyright 2008, Worcester Polytechnic Institute.
  */
 
+PolyCylinder.prototype = new Spirit3d();
+PolyCylinder.prototype.constructor = PolyCylinder;
+
  /* ----------------------------------------------------------------------- */
 /* Function    : Sphere ( pointList, radius, cylinderColorSet, sphereColorSet, drawLastSphere )
  *
@@ -23,7 +26,7 @@
  *				 drawLastSphere : dummy right now
  */
 function PolyCylinder (pointList, radius, cylinderColorSet, sphereColorSet, drawLastSphere) {
-	this.points = pointList.slice(0);
+	this.pointList = pointList.slice(0);
 	this.radius = radius;
 	this.cylinderColors = cylinderColorSet;
 	this.sphereColors = sphereColorSet;
@@ -41,9 +44,9 @@ function PolyCylinder (pointList, radius, cylinderColorSet, sphereColorSet, draw
  *				 normals : normal buffer
  *				 colors : color buffer
  */
-PolyCylinder.prototype.DumpToVertextArray = function (points, normals, colors) {
-	this.cylinder.DumpToVertextArray(points, normals, colors, 0);
-	this.sphere.DumpToVertextArray(points, normals, colors, 1);
+PolyCylinder.prototype.DumpToVertextArray = function (points, normals, colors, texCoords, tagents) {
+	this.cylinder.DumpToVertextArray(points, normals, colors, texCoords, tagents);
+	this.sphere.DumpToVertextArray(points, normals, colors, texCoords, tagents);
 }
 
 /* ----------------------------------------------------------------------- */
@@ -54,14 +57,14 @@ PolyCylinder.prototype.DumpToVertextArray = function (points, normals, colors) {
  * Parameters  : mvMatrix : model view matrix
  * 			     mvMatrixLoc : location of mv matrix in shader
  */
-PolyCylinder.prototype.Render = function (mvMatrix, mvMatrixLoc) {
+PolyCylinder.prototype.Render = function (mvMatrix, projection) {
 	var localMvMatrix = mvMatrix.slice(0);
 	localMvMatrix.matrix = true;
-	for (var i = 0; i < this.points.length - 1; i++) {
-		var diff = subtract(this.points[i + 1], this.points[i]);
+	for (var i = 0; i < this.pointList.length - 1; i++) {
+		var diff = subtract(this.pointList[i + 1], this.pointList[i]);
 		var s = vec3Magnitude(diff);
 		var direction = vec3Normalize(diff);
-		var midPoint = vec3Divide(add(this.points[i], this.points[i + 1]), 2);
+		var midPoint = vec3Divide(add(this.pointList[i], this.pointList[i + 1]), 2);
 		var transMat = translate(midPoint[0], midPoint[1], midPoint[2]);
 		var scaleMat = scalem(1.0, s, 1.0);
 		var angle = Math.acos(dot(vec3(0, 1, 0), direction));
@@ -78,12 +81,13 @@ PolyCylinder.prototype.Render = function (mvMatrix, mvMatrixLoc) {
 		localMvMatrix = mult( localMvMatrix, rotMat );
 		localMvMatrix = mult( localMvMatrix, scaleMat );
 		
-		gl.uniformMatrix4fv( modelViewLoc, false, flatten( localMvMatrix ) );
+		this.shader.shaderScript(this.shader, localMvMatrix, projection, this.points, this.normals, this.colors, this.texCoords, this.tangents);
+		
 		gl.drawArrays( gl.TRIANGLES, this.cylinder.startIndex, this.cylinder.vertexNum );
 		
 		transMat = translate(this.points[i + 1][0], this.points[i + 1][1], this.points[i + 1][2]);
 		localMvMatrix = mult( mvMatrix, transMat );
-		gl.uniformMatrix4fv( modelViewLoc, false, flatten( localMvMatrix ) );
+		gl.uniformMatrix4fv( this.shader.uMVMatrix, false, flatten( localMvMatrix ) );
 		gl.drawArrays( gl.TRIANGLES, this.sphere.startIndex, this.sphere.vertexNum );
 	}
 }

@@ -27,6 +27,8 @@ function Mesh () {
 	this.indices = [];	// type int
 	this.faceNormals = [];
 	this.faceColors = [];
+	this.texCoords = [];
+	this.tangents = [];	// type vec4
 	
 	this.startIndex = 0;
 	this.vertexNum = 0;
@@ -75,10 +77,10 @@ Mesh.prototype.ComputeVertexNormal = function () {
  *				 colorBuffer : color buffer
  *				 shareVertex : use vertex normal or face normal
  */
-Mesh.prototype.DumpToVertextArray = function (vertexBuffer, normalBuffer, colorBuffer, shareVertex) {
+Mesh.prototype.DumpToVertextArray = function (vertexBuffer, normalBuffer, colorBuffer, texCoordBuffer, tangentBuffer) {
 	this.startIndex = vertexBuffer.length;
 	this.vertexNum = this.indices.length;
-	if (shareVertex == 0 || this.faceColors.length > 0) {	// not sharing
+	if (this.normals.length == 0 || this.faceColors.length > 0) {	// not sharing
 		if (this.faceNormals.length == 0)
 			this.ComputeFaceNormal();
 		for (var i = 0; i < this.faceNormals.length; i++) {
@@ -92,6 +94,12 @@ Mesh.prototype.DumpToVertextArray = function (vertexBuffer, normalBuffer, colorB
 				else {	
 					colorBuffer.push(this.colors[id]);
 				}
+				if (typeof(texCoordBuffer) != "undefined" && this.texCoords.length > 0) {
+					texCoordBuffer.push(this.texCoords[i*3 + j]);
+				}
+				if (typeof(tangentBuffer) != "undefined" && this.tangents.length > 0) {
+					tangentBuffer.push(this.tangents[i*3 + j]);
+				}
 			}
 		}
 	}
@@ -104,6 +112,12 @@ Mesh.prototype.DumpToVertextArray = function (vertexBuffer, normalBuffer, colorB
 				vertexBuffer.push(vec3UpgradeToVec4(this.vertices[id]));
 				normalBuffer.push(vec3UpgradeToVec4(this.normals[id]));
 				colorBuffer.push(this.colors[id]);
+				if (typeof(texCoordBuffer) != "undefined" && this.texCoords.length > 0) {
+					texCoordBuffer.push(this.texCoords[i*3 + j]);
+				}
+				if (typeof(tangentBuffer) != "undefined" && this.tangents.length > 0) {
+					tangentBuffer.push(this.tangents[i*3 + j]);
+				}
 			}
 		}
 	}

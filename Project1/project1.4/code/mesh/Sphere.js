@@ -62,6 +62,22 @@ function Sphere (radius, numBands, colorSet) {
 			var up = i * (numBands + 1) + j;
 			var bottom = up + numBands + 1;
 			this.indices.push(bottom, up, up + 1, bottom + 1, bottom, up + 1);
+			var xTex = j * 1.0 / (numBands);
+			var yTex = i * 1.0 / (numBands);
+			var xTex_1 = (j+1) * 1.0 / (numBands);
+			var yTex_1 = (i+1) * 1.0 / (numBands);
+			
+			
+			this.texCoords.push(vec2(xTex, yTex_1));
+			this.texCoords.push(vec2(xTex, yTex));
+			this.texCoords.push(vec2(xTex_1, yTex));
+			
+			this.texCoords.push(vec2(xTex_1, yTex_1));
+			this.texCoords.push(vec2(xTex, yTex_1));
+			this.texCoords.push(vec2(xTex_1, yTex));
+			
+			for (var k = 0; k < 6; k++)
+				this.tangents.push(subtract(this.vertices[up + 1], this.vertices[up]));
 		}
 	}
 }

@@ -27,7 +27,7 @@ function Spirit3d () {
 	}
 }
 
-Spirit3d.prototype.SetShader = function (gl, prog, mvLoc, projLoc, pts, norms, cols, texs, tangs, script) {
+Spirit3d.prototype.SetShader = function (gl, prog, pts, norms, cols, texs, tangs, script) {
 	this.points = pts;
 	this.normals = norms;
 	this.colors = cols;

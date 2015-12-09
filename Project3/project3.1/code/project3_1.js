@@ -356,47 +356,41 @@ function InitializeGLShader() {
     //
     var programGround = initShaders( gl, "vertex-shader-ground", "fragment-shader-ground" );
     gl.useProgram( programGround );
-    var modelViewLocGround = gl.getUniformLocation( programGround, "modelView" );
-    var projectionLocGround = gl.getUniformLocation( programGround, "projection" );
 	ground = new Spirit3d();
 	ground.SetTranslation(vec3(0, 0, 0));
 	ground.mesh = new Quad(100, 100, vec4(0.5, 0.5, 0.4, 1.0));
 	ground.DumpToVertextArray(points, normals, colors, texCoords, tangents);
-	ground.SetShader(gl, programGround, modelViewLocGround, projectionLocGround, points, normals, colors, texCoords, tangents, GroundShaderScript);
+	ground.SetShader(gl, programGround, points, normals, colors, texCoords, tangents, GroundShaderScript);
 	
 	
 
 	var programCube= initShaders( gl, "vertex-shader-bumpmap", "fragment-shader-bumpmap" );
     gl.useProgram( programCube );
-    var modelViewLocCube = gl.getUniformLocation( programCube, "modelView" );
-    var projectionLocCube = gl.getUniformLocation( programCube, "projection" );
 	var cube = new Spirit3d();
 	cube.SetTranslation(vec3(-30, 10.01, 0));
 	cube.mesh = new Cube(20, 20, 20, vec4(1.0, 1.0, 1.0, 1.0));
 	cube.DumpToVertextArray(points, normals, colors, texCoords, tangents);
-	cube.SetShader(gl, programCube, modelViewLocCube, projectionLocCube, points, normals, colors, texCoords, tangents, BumpMapShaderScript);
+	cube.SetShader(gl, programCube, points, normals, colors, texCoords, tangents, BumpMapShaderScript);
 	ground.AddChildren(cube);
 	
 	var programSphere= initShaders( gl, "vertex-shader-envmap", "fragment-shader-envmap" );
     gl.useProgram( programSphere );
-    var modelViewLocSphere = gl.getUniformLocation( programSphere, "modelView" );
-    var projectionLocSphere = gl.getUniformLocation( programSphere, "projection" );
 	var sphere = new Spirit3d();
 	sphere.SetTranslation(vec3(0, 10.01, 0));
-	sphere.mesh = new Sphere(10, 16, vec4(1.0, 1.0, 1.0, 1.0));
+	sphere.mesh = new Sphere(10, 32, vec4(1.0, 1.0, 1.0, 1.0));
 	sphere.DumpToVertextArray(points, normals, colors, texCoords, tangents);
-	sphere.SetShader(gl, programSphere, modelViewLocSphere, projectionLocSphere, points, normals, colors, texCoords, tangents, EnvMapShaderScript);
+	sphere.SetShader(gl, programSphere, points, normals, colors, texCoords, tangents, EnvMapShaderScript);
 	ground.AddChildren(sphere);
 	
 	var programCylinder= initShaders( gl, "vertex-shader-parallelmap", "fragment-shader-parallelmap" );
     gl.useProgram( programCylinder );
-    var modelViewLocCylinder = gl.getUniformLocation( programCylinder, "modelView" );
-    var projectionLocCylinder = gl.getUniformLocation( programCylinder, "projection" );
+    var modelViewLocCylinder = gl.getUniformLocation( programCylinder, "uMVMatrix" );
+    var projectionLocCylinder = gl.getUniformLocation( programCylinder, "uProjMatrix" );
 	var cylinder = new Spirit3d();
 	cylinder.SetTranslation(vec3(30, 10.01, 0));
-	cylinder.mesh = new Cylinder(10, 10, 20, 16, vec4(1.0, 1.0, 1.0, 1.0));
+	cylinder.mesh = new Cylinder(10, 10, 20, 32, vec4(1.0, 1.0, 1.0, 1.0));
 	cylinder.DumpToVertextArray(points, normals, colors, texCoords, tangents);
-	cylinder.SetShader(gl, programCylinder, modelViewLocCylinder, projectionLocCylinder, points, normals, colors, texCoords, tangents, ParallaxMapShaderScript);
+	cylinder.SetShader(gl, programCylinder, points, normals, colors, texCoords, tangents, ParallaxMapShaderScript);
 	ground.AddChildren(cylinder);
 
 	
